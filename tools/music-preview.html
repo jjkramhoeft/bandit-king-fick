@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Music Preview</title>
+<style>
+  :root {
+    --bg: #1F3C8C; --panel: #23262E; --ink: #F2E8C9; --dim: #C8CCD4;
+    --btn: #C9B78A; --btn-ink: #23262E; --hi: #F2E8C9; --lo: #5A3B22; --hot: #F6D63E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px; background: var(--bg); color: var(--ink);
+    font: 14px/1.4 "Courier New", Courier, monospace;
+  }
+  h1 { font-size: 20px; margin: 0 0 12px; }
+  h2 { font-size: 15px; margin: 20px 0 8px; color: var(--hot); }
+  .bar {
+    display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center;
+    background: var(--panel); padding: 10px; border: 2px solid #000;
+  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px; }
+  button {
+    font: inherit; padding: 6px 8px; background: var(--btn); color: var(--btn-ink); cursor: pointer;
+    border: 2px solid; border-color: var(--hi) var(--lo) var(--lo) var(--hi); text-align: left;
+  }
+  button:active { border-color: var(--lo) var(--hi) var(--hi) var(--lo); }
+  button.on { background: var(--hot); }
+  button small { display: block; font-size: 11px; opacity: 0.8; }
+  #start { background: var(--hot); font-weight: bold; }
+  #now { color: var(--hot); min-width: 14ch; }
+  input[type=range] { width: 140px; vertical-align: middle; }
+  p.note { color: var(--dim); font-size: 12px; max-width: 70ch; }
+</style>
+</head>
+<body>
+<h1>Bandit King - music &amp; sound preview</h1>
+<div class="bar">
+  <button id="start" type="button">Start audio</button>
+  <button id="stop" type="button">Stop music</button>
+  <label><input id="enabled" type="checkbox" checked> Enabled</label>
+  <label>Volume <input id="vol" type="range" min="0" max="1" step="0.01" value="0.5"> <span id="volv">0.50</span></label>
+  <span id="now">Silent</span>
+</div>
+<p class="note">All sound is synthesized in the browser. Press "Start audio" first (or any button);
+looping tracks repeat until stopped, jingles play once.</p>
+
+<h2>Tracks</h2>
+<div id="tracks" class="grid"></div>
+
+<h2>Sound effects</h2>
+<div id="sfx" class="grid"></div>
+
+<script src="../js/core/ns.js"></script>
+<script src="../js/audio/music.js"></script>
+<script>
+(function () {
+  'use strict';
+  var M = BK.Music;
+  var DESC = {
+    'title': 'Grand, D gong mode, pipa and gongs',
+    'setup': 'Calm zhi mode, zheng and xiao',
+    'main-spring': 'Light and hopeful, dizi solo',
+    'main-summer': 'Lively dance, bright pipa',
+    'main-autumn': 'Melancholy yu mode, erhu',
+    'main-winter': 'Sparse and cold, jue mode',
+    'war-spring': 'Battle, driving zhi mode',
+    'war-summer': 'Battle, fastest, toms and woodblock',
+    'war-autumn': 'Battle, dark yu mode, small gong',
+    'war-winter': 'Battle, heavy drums, big gong',
+    'ending': 'Triumphant and warm finale',
+    'liangshan': 'Liangshan Marsh, shang mode, rocking bass',
+    'aftermath': 'After the battle, quiet zheng and erhu',
+    'dispatch': 'Jingle: an army sets out',
+    'victory': 'Jingle: fanfare',
+    'defeat': 'Jingle: falling lament',
+    'edict': 'Jingle: imperial proclamation',
+    'gameover': 'Jingle: slow farewell'
+  };
+  var trackButtons = {};
+
+  function button(parent, label, sub, onClick) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.appendChild(document.createTextNode(label));
+    if (sub) {
+      var s = document.createElement('small');
+      s.textContent = sub;
+      b.appendChild(s);
+    }
+    b.addEventListener('click', onClick);
+    parent.appendChild(b);
+    return b;
+  }
+
+  var tracksEl = document.getElementById('tracks');
+  M.TRACKS.forEach(function (name) {
+    trackButtons[name] = button(tracksEl, name, DESC[name], function () { M.init(); M.play(name); refresh(); });
+  });
+
+  var sfxEl = document.getElementById('sfx');
+  (M.SFX || []).forEach(function (name) {
+    button(sfxEl, name, '', function () { M.init(); M.sfx(name); });
+  });
+
+  document.getElementById('start').addEventListener('click', function () {
+    this.textContent = M.init() ? 'Audio ready' : 'No Web Audio';
+  });
+  document.getElementById('stop').addEventListener('click', function () { M.stop(); refresh(); });
+  document.getElementById('enabled').addEventListener('change', function () { M.setEnabled(this.checked); refresh(); });
+  var vol = document.getElementById('vol'), volv = document.getElementById('volv');
+  vol.addEventListener('input', function () { M.setVolume(+vol.value); volv.textContent = (+vol.value).toFixed(2); });
+  M.setVolume(+vol.value);
+
+  function refresh() {
+    var c = M.current();
+    document.getElementById('now').textContent = c ? 'Playing: ' + c : 'Silent';
+    Object.keys(trackButtons).forEach(function (n) { trackButtons[n].classList.toggle('on', n === c); });
+  }
+  setInterval(refresh, 250);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Art Preview</title>
+<style>
+  :root {
+    --bg: #23262E; --panel: #2E323C; --line: #4C525E; --text: #F2E8C9; --dim: #C9B78A; --accent: #E03C2C; --gold: #F6D63E;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px 20px 40px; background: var(--bg); color: var(--text); font: 14px/1.4 "Courier New", Courier, monospace; }
+  h1 { margin: 0 0 4px; font-size: 20px; letter-spacing: 1px; color: var(--gold); }
+  h2 { margin: 28px 0 10px; font-size: 16px; color: var(--gold); border-bottom: 2px solid var(--line); padding-bottom: 4px; }
+  p.note { margin: 2px 0 10px; color: var(--dim); }
+  canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 6px 0 12px; }
+  button, select { font: inherit; color: var(--text); background: var(--panel); border: 2px solid var(--line); padding: 3px 10px; cursor: pointer; }
+  button:hover, select:hover { border-color: var(--dim); }
+  label { color: var(--dim); }
+  .title-wrap { position: relative; width: 640px; max-width: 100%; }
+  .title-wrap canvas { width: 640px; height: 400px; max-width: 100%; height: auto; aspect-ratio: 320 / 200; border: 2px solid var(--line); }
+  .title-over { position: absolute; left: 0; right: 0; top: 13%; text-align: center; pointer-events: none; }
+  .title-over .t { font: bold 30px/1.1 Georgia, "Times New Roman", serif; color: #F6D63E; text-shadow: 3px 3px 0 #A0201C, 5px 5px 0 #000; letter-spacing: 1px; }
+  .title-over .s { margin-top: 8px; font-size: 13px; color: #F2E8C9; text-shadow: 2px 2px 0 #000; }
+  .grid { display: grid; gap: 12px; }
+  .portraits { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+  .card { background: var(--panel); border: 2px solid var(--line); padding: 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .card canvas { width: 64px; height: 80px; border: 1px solid #000; }
+  .card .n { font-size: 12px; text-align: center; color: var(--text); }
+  .card .r { font-size: 11px; color: var(--dim); }
+  .scenes { grid-template-columns: repeat(auto-fill, minmax(284px, 1fr)); }
+  .scene canvas { width: 272px; height: 104px; border: 1px solid #000; }
+  .scene .n { font-size: 13px; color: var(--text); align-self: flex-start; }
+  .warn { color: var(--accent); }
+</style>
+</head>
+<body>
+<h1>Bandit King of Ancient China &mdash; art preview</h1>
+<p class="note">Procedural pixel art from js/art/*.js, palette BK.PAL only, shown at 2&times;. <span id="rm"></span></p>
+
+<h2>Title backdrop (320&times;200)</h2>
+<div class="bar">
+  <label><input type="checkbox" id="overlay" checked> show a sample DOM title</label>
+  <button id="titleToggle">Pause</button>
+</div>
+<div class="title-wrap">
+  <canvas id="title" width="320" height="200"></canvas>
+  <div class="title-over" id="titleOver">
+    <div class="t">Bandit King of<br>Ancient China</div>
+    <div class="s">Fick &middot; 1989</div>
+  </div>
+</div>
+
+<h2>Portraits (32&times;40)</h2>
+<p class="note">Hover a portrait to see its resolved look. Named heroes pass a partial look; the rest is filled from the id.</p>
+<div class="grid portraits" id="portraits"></div>
+<div class="bar">
+  <button id="more">More random portraits</button>
+  <select id="moreRole">
+    <option value="hero">hero</option>
+    <option value="official">official</option>
+    <option value="boss">boss</option>
+    <option value="townsperson">townsperson</option>
+    <option value="emperor">emperor</option>
+  </select>
+</div>
+<div class="grid portraits" id="random"></div>
+
+<h2>Event vignettes (136&times;52)</h2>
+<div class="bar">
+  <label for="season">Season</label>
+  <select id="season">
+    <option>Spring</option><option>Summer</option><option>Autumn</option><option>Winter</option>
+  </select>
+  <button id="replay">Replay all</button>
+  <button id="stopAll">Stop all</button>
+</div>
+<div class="grid scenes" id="scenes"></div>
+
+<script src="../js/core/ns.js"></script>
+<script src="../js/art/portrait.js"></script>
+<script src="../js/art/vignette.js"></script>
+<script src="../js/art/titleart.js"></script>
+<script>
+(function () {
+  'use strict';
+  var BK = window.BK;
+
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.getElementById('rm').innerHTML = '<span class="warn">prefers-reduced-motion is on: animations show a single still frame.</span>';
+  }
+
+  // ---- title ----
+  var titleCanvas = document.getElementById('title');
+  var title = BK.TitleArt.render(titleCanvas), paused = false;
+  document.getElementById('titleToggle').onclick = function () {
+    if (paused) { title = BK.TitleArt.render(titleCanvas); this.textContent = 'Pause'; }
+    else { title.stop(); this.textContent = 'Play'; }
+    paused = !paused;
+  };
+  document.getElementById('overlay').onchange = function () {
+    document.getElementById('titleOver').style.display = this.checked ? '' : 'none';
+  };
+
+  // ---- portraits ----
+  var named = [
+    { id: 'lu-zhishen', name: 'Lu Zhishen', role: 'hero', look: { sex: 'm', age: 'adult', hair: 'monk', beard: 'full', build: 'broad', mood: 'fierce', brows: 'thick', skin: 1, garb: 8 } },
+    { id: 'yang-zhi', name: 'Yang Zhi', role: 'hero', look: { sex: 'm', mark: 'blueface', hair: 'topknot', beard: 'mustache', mood: 'calm', brows: 'thick' } },
+    { id: 'shi-jin', name: 'Shi Jin', role: 'hero', look: { sex: 'm', age: 'young', mark: 'tattoo', hair: 'topknot', beard: 'none', build: 'broad', mood: 'smile', garb: 11 } },
+    { id: 'li-kui', name: 'Li Kui', role: 'hero', look: { sex: 'm', skin: 3, hair: 'wild', hairColor: 'black', beard: 'wild', mood: 'fierce', brows: 'angry', build: 'broad' } },
+    { id: 'liu-tang', name: 'Liu Tang', role: 'hero', look: { sex: 'm', hair: 'wild', hairColor: 'red', beard: 'stubble', mood: 'fierce', brows: 'angry' } },
+    { id: 'hu-sanniang', name: 'Hu Sanniang', role: 'hero', look: { sex: 'f', age: 'young', hair: 'bun', mood: 'fierce', brows: 'angry', garb: 10, accessory: 'earring' } },
+    { id: 'gao-qiu', name: 'Gao Qiu', role: 'official', look: { hair: 'official', mood: 'sly', beard: 'goatee', age: 'adult', garb: 21 } },
+    { id: 'emperor-huizong', name: 'Emperor Huizong', role: 'emperor', look: { hair: 'crown', beard: 'mustache', mood: 'calm' } },
+    { id: 'lin-chong', name: 'Lin Chong (branded)', role: 'hero', look: { sex: 'm', age: 'adult', hairColor: 'black', mark: 'brand', hair: 'long', beard: 'stubble', mood: 'calm', garb: 26 } },
+    { id: 'wu-song', name: 'Wu Song', role: 'hero', look: { sex: 'm', hair: 'headband', mood: 'fierce', brows: 'angry', build: 'broad', mark: 'brand', beard: 'none' } },
+    { id: 'song-jiang', name: 'Song Jiang', role: 'hero', look: { sex: 'm', skin: 2, hair: 'topknot', beard: 'mustache', mood: 'smile' } },
+    { id: 'wu-yong', name: 'Wu Yong', role: 'hero', look: { sex: 'm', hair: 'scarf', beard: 'long', mood: 'sly', build: 'slim', age: 'adult' } },
+    { id: 'gongsun-sheng', name: 'Gongsun Sheng', role: 'hero', look: { sex: 'm', hair: 'topknot', beard: 'long', mood: 'calm', build: 'slim' } },
+    { id: 'yan-qing', name: 'Yan Qing', role: 'hero', look: { sex: 'm', age: 'young', hair: 'topknot', accessory: 'flower', mark: 'tattoo', mood: 'smile', beard: 'none' } },
+    { id: 'hua-rong', name: 'Hua Rong', role: 'hero', look: { sex: 'm', age: 'young', hair: 'helmet', mood: 'calm', beard: 'none', accessory: 'feather' } },
+    { id: 'guan-sheng', name: 'Guan Sheng', role: 'hero', look: { sex: 'm', skin: 2, hair: 'topknot', beard: 'long', hairColor: 'black', mood: 'calm', brows: 'thick', garb: 16 } },
+    { id: 'sun-erniang', name: 'Sun Erniang', role: 'hero', look: { sex: 'f', hair: 'bun', mood: 'sly', accessory: 'flower' } },
+    { id: 'gu-dasao', name: 'Gu Dasao', role: 'hero', look: { sex: 'f', age: 'adult', hair: 'scarf', build: 'broad', mood: 'fierce' } },
+    { id: 'cai-jing', name: 'Cai Jing', role: 'official', look: { age: 'old', beard: 'long', mood: 'sly' } },
+    { id: 'tong-guan', name: 'Tong Guan', role: 'official', look: { beard: 'none', mood: 'fierce', build: 'broad' } },
+    { id: 'old-fisherman', name: 'Old fisherman', role: 'townsperson', look: { sex: 'm', age: 'old', hair: 'scarf', beard: 'long', skin: 2 } },
+    { id: 'old-farmer', name: 'Old farmer', role: 'townsperson', look: { sex: 'm', age: 'old', hair: 'bald', beard: 'goatee', mood: 'smile' } },
+    { id: 'old-scholar', name: 'Old scholar', role: 'townsperson', look: { sex: 'm', age: 'old', hair: 'topknot', beard: 'long', mood: 'calm', hairColor: 'white' } },
+    { id: 'innkeeper', name: 'Innkeeper', role: 'townsperson', look: { sex: 'm', build: 'broad', mood: 'smile', hair: 'cap' } },
+    { id: 'blacksmith', name: 'Blacksmith', role: 'townsperson', look: { sex: 'm', build: 'broad', hair: 'headband', beard: 'full', skin: 2 } },
+    { id: 'merchant', name: 'Merchant', role: 'townsperson', look: { sex: 'm', hair: 'cap', mood: 'sly', beard: 'mustache' } },
+    { id: 'village-woman', name: 'Village woman', role: 'townsperson', look: { sex: 'f', hair: 'scarf', age: 'adult' } },
+    { id: 'tea-girl', name: 'Tea girl', role: 'townsperson', look: { sex: 'f', age: 'young', hair: 'bun', mood: 'smile', accessory: 'flower' } },
+    { id: 'boss-helmet', name: 'Bandit chief', role: 'boss', look: { hair: 'helmet', mood: 'fierce' } },
+    { id: 'boss-scar', name: 'Scarred chief', role: 'boss', look: { hair: 'wild', mark: 'scar' } },
+    { id: 'boss-turban', name: 'Marsh chief', role: 'boss', look: { hair: 'turban' } }
+  ];
+  var roles = ['hero', 'official', 'boss', 'townsperson', 'hero', 'townsperson', 'boss', 'hero', 'official', 'townsperson'];
+  for (var i = 0; i < 10; i++) named.push({ id: 'npc-' + (i + 1), name: 'npc-' + (i + 1), role: roles[i] });
+
+  function card(spec, host) {
+    var div = document.createElement('div');
+    div.className = 'card';
+    var c = BK.Portrait.render(spec);
+    c.title = spec.name + '\n' + JSON.stringify(BK.Portrait.resolveLook(spec), null, 1).replace(/[{}"]/g, '').trim();
+    div.appendChild(c);
+    var n = document.createElement('div'); n.className = 'n'; n.textContent = spec.name; div.appendChild(n);
+    var r = document.createElement('div'); r.className = 'r'; r.textContent = spec.role; div.appendChild(r);
+    host.appendChild(div);
+  }
+  var host = document.getElementById('portraits');
+  named.forEach(function (s) { card(s, host); });
+
+  var randomHost = document.getElementById('random');
+  document.getElementById('more').onclick = function () {
+    var role = document.getElementById('moreRole').value;
+    randomHost.innerHTML = '';
+    for (var k = 0; k < 16; k++) {
+      var id = role + '-' + Math.floor(Math.random() * 1e9).toString(36);
+      card({ id: id, name: id, role: role }, randomHost);
+    }
+  };
+
+  // ---- vignettes ----
+  var players = [];
+  var sceneHost = document.getElementById('scenes');
+  BK.Vignette.SCENES.forEach(function (name) {
+    var div = document.createElement('div');
+    div.className = 'card scene';
+    var n = document.createElement('div'); n.className = 'n'; n.textContent = name;
+    var c = document.createElement('canvas'); c.width = BK.Vignette.W; c.height = BK.Vignette.H;
+    div.appendChild(n); div.appendChild(c);
+    sceneHost.appendChild(div);
+    players.push({ name: name, v: BK.Vignette.create(c) });
+  });
+  function playAll() {
+    var season = document.getElementById('season').value;
+    players.forEach(function (p) { p.v.play(p.name, { season: season }); });
+  }
+  document.getElementById('season').onchange = playAll;
+  document.getElementById('replay').onclick = playAll;
+  document.getElementById('stopAll').onclick = function () { players.forEach(function (p) { p.v.stop(); }); };
+  playAll();
+})();
+</script>
+</body>
+</html>

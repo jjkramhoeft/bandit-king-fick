@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bandit Kings Remake Research</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Shippori+Mincho+B1:wght@600;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* Layout: a single reading column with a sticky contents rail on wide screens; screen diagrams break wider than the prose. */
+:root {
+  --bg: #EDEFE8;
+  --panel: #F7F8F3;
+  --ink: #1A2030;
+  --muted: #576072;
+  --rule: #C8CEC2;
+  --lacquer: #9B2B20;
+  --gold: #87631A;
+  --jade: #2B6753;
+  --hi-bg: #D9EADD; --hi-fg: #22543E;
+  --md-bg: #F0E4C6; --md-fg: #6A4E12;
+  --lo-bg: #F2DAD5; --lo-fg: #7C281E;
+  --ob-bg: #DCE4F0; --ob-fg: #24426E;
+
+  /* Game-screen tokens: the diagrams show the game's own black screens, so they stay the same in both themes. */
+  --scr: #0B0C10;
+  --scr-ink: #F4F2EA;
+  --scr-dark: #16171C;
+  --scr-yel: #F2D54B;
+  --scr-cyan: #62D2E2;
+  --scr-green: #59B84C;
+  --frame-a: #A93520;
+  --frame-b: #E0B04A;
+  --land: #CFE0A5;
+  --sea: #2E58B6;
+  --mount: #8E6B3C;
+  --f-red: #D2372B;
+  --f-orange: #DE8A2A;
+  --f-blue: #49A7DD;
+  --f-green: #4FB34F;
+  --f-mag: #C64AB2;
+  --f-cream: #F3EBC2;
+  --curtain: #3E8C6C;
+  --snow: #DCEAF1;
+  --snow-dot: #B9D3E0;
+  --ice: #A6E3EE;
+  --forest-w: #8FB8C9;
+  --mount-w: #7486A8;
+  --castle: #C59B55;
+  --unit-a: #D2372B;
+  --unit-d: #2E58B6;
+
+  --display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --pixel: "DotGothic16", ui-monospace, "MS Gothic", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151B; --panel: #1A1E26; --ink: #E6E3D9; --muted: #A0A8B5; --rule: #2E3440;
+    --lacquer: #E46D5D; --gold: #D8AE58; --jade: #6CB898;
+    --hi-bg: #1F3A2E; --hi-fg: #A6DDBE; --md-bg: #3A3020; --md-fg: #EACB86;
+    --lo-bg: #42241F; --lo-fg: #F2ABA0; --ob-bg: #1F2D44; --ob-fg: #A9C4EE;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151B; --panel: #1A1E26; --ink: #E6E3D9; --muted: #A0A8B5; --rule: #2E3440;
+  --lacquer: #E46D5D; --gold: #D8AE58; --jade: #6CB898;
+  --hi-bg: #1F3A2E; --hi-fg: #A6DDBE; --md-bg: #3A3020; --md-fg: #EACB86;
+  --lo-bg: #42241F; --lo-fg: #F2ABA0; --ob-bg: #1F2D44; --ob-fg: #A9C4EE;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 4rem;
+}
+a { color: var(--lacquer); text-underline-offset: 2px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 2px; }
+
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3rem;
+}
+@media (min-width: 1100px) {
+  .shell { grid-template-columns: 220px minmax(0, 1fr); }
+}
+.rail { display: none; }
+@media (min-width: 1100px) {
+  .rail {
+    display: block;
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 2rem);
+    align-self: start;
+    padding-top: 2.5rem;
+    font-size: 0.9rem;
+  }
+}
+.rail p { font-family: var(--pixel); font-size: 0.8rem; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 0.75rem; }
+.rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; border-left: 1px solid var(--rule); }
+.rail a { color: var(--muted); text-decoration: none; display: block; padding-left: 0.9rem; }
+.rail a:hover { color: var(--lacquer); }
+
+main { min-width: 0; }
+.prose { max-width: 68ch; }
+
+header.mast { padding-top: 3rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--rule); margin-bottom: 2rem; }
+.eyebrow { font-family: var(--pixel); font-size: 0.85rem; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 1rem; }
+h1 {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(2.2rem, 5.5vw, 3.6rem);
+  line-height: 1.05;
+  margin: 0;
+  text-wrap: balance;
+}
+.jp-title { font-family: var(--display); font-weight: 600; font-size: clamp(1.1rem, 2.4vw, 1.45rem); color: var(--lacquer); margin: 0.6rem 0 0; }
+.dek { font-size: 1.2rem; color: var(--muted); margin: 1rem 0 0; max-width: 60ch; }
+
+h2 {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(1.6rem, 3.4vw, 2.1rem);
+  line-height: 1.15;
+  margin: 3.5rem 0 1rem;
+  text-wrap: balance;
+  scroll-margin-top: 1.5rem;
+}
+h2 .num { font-family: var(--pixel); font-weight: 400; font-size: 0.55em; color: var(--lacquer); display: block; letter-spacing: 0.1em; margin-bottom: 0.35rem; }
+h3 { font-family: var(--display); font-weight: 600; font-size: 1.3rem; line-height: 1.25; margin: 2.2rem 0 0.6rem; text-wrap: balance; scroll-margin-top: 1.5rem; }
+h4 { font-size: 1rem; margin: 1.4rem 0 0.4rem; }
+p { margin: 0 0 1rem; }
+ul, ol { margin: 0 0 1rem; padding-left: 1.3rem; }
+li { margin-bottom: 0.35rem; }
+li::marker { color: var(--muted); }
+strong { font-weight: 600; }
+.small { font-size: 0.92rem; color: var(--muted); }
+sup.cite { font-size: 0.7em; line-height: 0; }
+sup.cite a { text-decoration: none; font-family: var(--pixel); }
+
+.verdict {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-top: 4px solid var(--lacquer);
+  padding: 1.4rem 1.5rem 0.6rem;
+  margin: 0 0 1rem;
+  max-width: 78ch;
+}
+.verdict h2 { margin-top: 0; font-size: 1.35rem; }
+.verdict ul { padding-left: 1.1rem; }
+
+.chip {
+  display: inline-block;
+  font-family: var(--pixel);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.5rem;
+  border-radius: 3px;
+  vertical-align: 0.15em;
+  margin-left: 0.4rem;
+  white-space: nowrap;
+}
+.chip.hi { background: var(--hi-bg); color: var(--hi-fg); }
+.chip.md { background: var(--md-bg); color: var(--md-fg); }
+.chip.lo { background: var(--lo-bg); color: var(--lo-fg); }
+.chip.ob { background: var(--ob-bg); color: var(--ob-fg); }
+.legend-chips { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.9rem; color: var(--muted); margin: 0 0 1.5rem; }
+.legend-chips span.chip { margin-left: 0; margin-right: 0.35rem; }
+
+.tablewrap { overflow-x: auto; margin: 0 0 1.5rem; border: 1px solid var(--rule); background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; font-size: 0.85rem; color: var(--muted); background: var(--bg); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.jp { font-family: var(--display); white-space: nowrap; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+
+figure.screen { margin: 1.5rem 0 2rem; max-width: 900px; }
+figure.screen svg { display: block; width: 100%; height: auto; max-width: 100%; border: 1px solid var(--rule); background: var(--scr); }
+figure.screen.nes svg { max-width: 460px; }
+figcaption { font-size: 0.92rem; color: var(--muted); margin-top: 0.6rem; max-width: 75ch; }
+figcaption b { color: var(--ink); font-weight: 600; }
+.keys { list-style: none; padding: 0; margin: 0.8rem 0 0; display: grid; gap: 0.35rem; font-size: 0.92rem; max-width: 75ch; }
+.keys li { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); gap: 0.5rem; margin: 0; }
+.keys .k { font-family: var(--pixel); background: var(--lacquer); color: var(--panel); border-radius: 50%; width: 1.4rem; height: 1.4rem; display: grid; place-items: center; font-size: 0.75rem; }
+
+.twocol { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; margin: 0 0 1.5rem; max-width: 900px; }
+@media (min-width: 760px) { .twocol { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.box { background: var(--panel); border: 1px solid var(--rule); padding: 1rem 1.2rem 0.4rem; min-width: 0; }
+.box h4 { margin-top: 0; font-family: var(--display); font-size: 1.1rem; }
+.box.free { border-top: 3px solid var(--jade); }
+.box.make { border-top: 3px solid var(--lacquer); }
+
+.score { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; max-width: 900px; border: 1px solid var(--rule); background: var(--panel); margin: 0 0 1.5rem; }
+.score div { display: grid; grid-template-columns: minmax(9rem, 14rem) minmax(0, 1fr); gap: 1rem; padding: 0.7rem 1rem; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.score div:last-child { border-bottom: 0; }
+.score dt { font-weight: 600; margin: 0; }
+.score dd { margin: 0; color: var(--muted); font-size: 0.95rem; min-width: 0; }
+.score dd b { color: var(--ink); }
+@media (max-width: 520px) { .score div { grid-template-columns: minmax(0, 1fr); gap: 0.2rem; } }
+
+ol.sources { padding-left: 1.6rem; font-size: 0.92rem; max-width: 90ch; }
+ol.sources li { margin-bottom: 0.45rem; scroll-margin-top: 1.5rem; overflow-wrap: anywhere; }
+ol.sources .q { font-family: var(--pixel); font-size: 0.72rem; color: var(--muted); margin-left: 0.3rem; }
+
+.toc-inline { font-size: 0.95rem; margin: 0 0 2rem; }
+.toc-inline ol { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; list-style: none; padding: 0; margin: 0; }
+@media (min-width: 1100px) { .toc-inline { display: none; } }
+
+.tracks { columns: 2 16rem; column-gap: 2rem; font-size: 0.95rem; padding-left: 1.6rem; max-width: 75ch; }
+.tracks li { break-inside: avoid; }
+.tracks .jp { font-family: var(--display); color: var(--muted); margin-left: 0.3rem; }
+
+/* SVG diagram classes */
+.w-scr { fill: var(--scr); }
+.w-ink { fill: var(--scr-ink); }
+.w-dark { fill: var(--scr-dark); }
+.w-yel { fill: var(--scr-yel); }
+.w-cyan { fill: var(--scr-cyan); }
+.w-green { fill: var(--scr-green); }
+.w-fa { fill: var(--frame-a); }
+.w-fb { fill: var(--frame-b); }
+.w-land { fill: var(--land); stroke: #4B5A33; stroke-width: 1; }
+.w-sea { fill: var(--sea); }
+.w-mount { fill: var(--mount); }
+.w-curtain { fill: var(--curtain); }
+.w-red { fill: var(--f-red); }
+.w-orange { fill: var(--f-orange); }
+.w-blue { fill: var(--f-blue); }
+.w-fgreen { fill: var(--f-green); }
+.w-mag { fill: var(--f-mag); }
+.w-cream { fill: var(--f-cream); }
+.w-pref { stroke: #2C3520; stroke-width: 1; }
+.w-stroke-yel { fill: none; stroke: var(--scr-yel); stroke-width: 2; }
+.w-stroke-green { fill: none; stroke: var(--scr-green); stroke-width: 2; }
+.w-stroke-gold { fill: none; stroke: var(--frame-b); stroke-width: 2; }
+.w-txt { font-family: var(--pixel); font-size: 13px; }
+.w-txt-s { font-family: var(--pixel); font-size: 10px; }
+.w-txt-xs { font-family: var(--pixel); font-size: 8px; }
+.w-mark circle { fill: var(--lacquer); stroke: var(--scr-ink); stroke-width: 1.5; }
+.w-mark text { fill: var(--scr-ink); font-family: var(--pixel); font-size: 12px; text-anchor: middle; dominant-baseline: central; }
+.hex-plain { fill: var(--snow); stroke: #8FA9BA; stroke-width: 0.8; }
+.hex-forest { fill: var(--forest-w); stroke: #6E8FA0; stroke-width: 0.8; }
+.hex-mount { fill: var(--mount-w); stroke: #56688A; stroke-width: 0.8; }
+.hex-ice { fill: var(--ice); stroke: #7FBCC8; stroke-width: 0.8; }
+.hex-castle { fill: var(--castle); stroke: #7C5A26; stroke-width: 0.8; }
+.u-a { fill: var(--unit-a); }
+.u-d { fill: var(--unit-d); }
+</style>
+<style>body { margin: 0; }</style>
+</head>
+<body>
+
+<div class="shell">
+  <nav class="rail" aria-label="Contents">
+    <p>CONTENTS</p>
+    <ol>
+      <li><a href="#verdict">Verdict</a></li>
+      <li><a href="#history">The game and "2017"</a></li>
+      <li><a href="#gameplay">How it plays</a></li>
+      <li><a href="#screens">The screens</a></li>
+      <li><a href="#art">Art, colour, sound</a></li>
+      <li><a href="#remake">Remake evaluation</a></li>
+      <li><a href="#open">Open questions</a></li>
+      <li><a href="#sources">Sources</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="mast">
+      <p class="eyebrow">RESEARCH REPORT · 1 NOVEMBER 2026 · FOR THE BROWSER REMAKE PROJECT</p>
+      <h1>Bandit Kings of Ancient China</h1>
+      <p class="jp-title">水滸伝・天命の誓い <span class="small">Suikoden: Tenmei no Chikai · KOEI</span></p>
+      <p class="dek">What the original game is, how it plays, what it looks and sounds like, and whether rebuilding it for the browser is a good idea.</p>
+    </header>
+
+    <nav class="toc-inline" aria-label="Contents">
+      <ol>
+        <li><a href="#verdict">Verdict</a></li>
+        <li><a href="#history">The game and "2017"</a></li>
+        <li><a href="#gameplay">How it plays</a></li>
+        <li><a href="#screens">The screens</a></li>
+        <li><a href="#art">Art, colour, sound</a></li>
+        <li><a href="#remake">Remake evaluation</a></li>
+        <li><a href="#open">Open questions</a></li>
+        <li><a href="#sources">Sources</a></li>
+      </ol>
+    </nav>
+
+    <section class="verdict" id="verdict" aria-labelledby="verdict-h">
+      <h2 id="verdict-h">Verdict</h2>
+      <ul>
+        <li><strong>The README's "2017" is a re-release date.</strong> The game first came out in Japan in 1989 on the NEC PC-88. The Western DOS and Mac versions followed in 1989, the NES in 1990 and the Amiga in 1990–91. 2017 is when KOEI Tecmo put the Japanese PC version on Steam.</li>
+        <li><strong>The rules are fully documented and small.</strong> The original manuals describe everything: 49 prefectures, 255 characters, 16 monthly commands and a 30-day hex battle. That fits comfortably in a browser game.</li>
+        <li><strong>The code is the easy part.</strong> Most of the effort goes into the computer opponents, balancing, and the art: up to 255 portraits, a map, battle tiles, event pictures and around 20 music cues.</li>
+        <li><strong>Build a spiritual successor, not a copy.</strong> KOEI Tecmo still sells the game. The Water Margin story and the general mechanics are free to use. The name, art, music, text, exact screen layout and stat tables are not.</li>
+      </ul>
+    </section>
+
+    <div class="legend-chips prose" aria-label="Confidence labels used in this report">
+      <span><span class="chip hi">VERIFIED</span>confirmed by 2–3 independent checks</span>
+      <span><span class="chip ob">OBSERVED</span>seen in the screenshots linked here</span>
+      <span><span class="chip md">SINGLE SOURCE</span>one source, not cross-checked</span>
+      <span><span class="chip lo">INFERENCE</span>my analysis, not a sourced fact</span>
+    </div>
+
+    <!-- 1 -->
+    <h2 id="history"><span class="num">01</span>The game, and where "2017" comes from</h2>
+    <div class="prose">
+      <p><em>Bandit Kings of Ancient China</em> is a KOEI historical strategy game based on the Chinese classic <em>Water Margin</em> (<span lang="ja">水滸伝</span>, Shuihu Zhuan). You play one of the novel's outlaw heroes in early 12th-century Song China. You build up a band of followers and a power base of prefectures, earn the Emperor's trust, and kill the corrupt minister Gao Qiu before northern invaders end the dynasty.<sup class="cite"><a href="#s3">3</a></sup><sup class="cite"><a href="#s6">6</a></sup></p>
+      <p><strong>The 2017 date.</strong> <span class="chip hi">VERIFIED</span> On 21 February 2017, KOEI Tecmo released the game on Steam as part of the "Kou Shibusawa Archives", a re-release line for the 35th anniversary of producer Kou Shibusawa. Bandit Kings was in the third round. The Steam build runs only on the Japanese edition of Windows 10.<sup class="cite"><a href="#s1">1</a></sup><sup class="cite"><a href="#s2">2</a></sup> No other 2017 release of this game exists, so this is almost certainly where the README's date comes from.</p>
+      <p><strong>A date discrepancy.</strong> The Steam store blurb says the game came out in Japan in 1988. Both Wikipedias, the DOS title screen ("©1989 KOEI") and the release databases say 1989. 1989 is the safer date to use.</p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Platform</th><th>Region</th><th>Released</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>NEC PC-8801</td><td>Japan</td><td>March 1989</td><td>First release. Its soundtrack was published on CD in November 1989.<sup class="cite"><a href="#s4">4</a></sup><sup class="cite"><a href="#s12">12</a></sup></td></tr>
+          <tr><td>Sharp X1</td><td>Japan</td><td>April 1989</td><td></td></tr>
+          <tr><td>MSX2</td><td>Japan</td><td>1989 (August or 1 November; sources differ)</td><td>64 KB RAM, 128 KB VRAM, PSG + MSX-Music sound.<sup class="cite"><a href="#s11">11</a></sup></td></tr>
+          <tr><td>MS-DOS</td><td>USA</td><td>November 1989</td><td>EGA 640×350 (16 colours) or CGA 640×200. Keyboard only.<sup class="cite"><a href="#s9">9</a></sup></td></tr>
+          <tr><td>Macintosh</td><td>USA</td><td>1989</td><td>Its save format has been reverse-engineered.<sup class="cite"><a href="#s13">13</a></sup></td></tr>
+          <tr><td>Sharp X68000</td><td>Japan</td><td>20 December 1989</td><td>Uses the same portrait file as the PC-98.<sup class="cite"><a href="#s15">15</a></sup></td></tr>
+          <tr><td>FM Towns</td><td>Japan</td><td>1 February 1990</td><td></td></tr>
+          <tr><td>Famicom</td><td>Japan</td><td>25 June 1990</td><td></td></tr>
+          <tr><td>NES</td><td>USA</td><td>December 1990</td><td>MMC5 cartridge with battery save.<sup class="cite"><a href="#s14">14</a></sup></td></tr>
+          <tr><td>Amiga</td><td>USA 1990 · Europe 1991</td><td>1990–91</td><td>Published by Infogrames in Europe. Mouse menus and sampled sound.<sup class="cite"><a href="#s6">6</a></sup><sup class="cite"><a href="#s8">8</a></sup></td></tr>
+          <tr><td>NEC PC-9801</td><td>Japan</td><td>1991</td><td></td></tr>
+          <tr><td>PlayStation</td><td>Japan</td><td>4 October 1996</td><td>Remake (SLPS-00521). Reissued in 1999 and 2000 as budget releases.<sup class="cite"><a href="#s10">10</a></sup></td></tr>
+          <tr><td>Sega Saturn</td><td>Japan</td><td>27 December 1996</td><td>Remake.</td></tr>
+          <tr><td>Windows</td><td>Japan</td><td>2000, 2003</td><td>Re-releases.<sup class="cite"><a href="#s4">4</a></sup></td></tr>
+          <tr><td>Steam (Windows)</td><td>Sold worldwide; Japanese text only</td><td>21 February 2017</td><td>Kou Shibusawa Archives. Shown at 640×400; 30 MB.<sup class="cite"><a href="#s1">1</a></sup></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small prose">Japanese release dates come from Japanese Wikipedia via the verification agents, not from KOEI's own records.</p>
+
+    <!-- 2 -->
+    <h2 id="gameplay"><span class="num">02</span>How it plays</h2>
+    <div class="prose">
+      <p>Most numbers below come from the US NES manual, cross-checked against the 1991 Amiga manual. The two manuals agree on the core rules. Battle numbers and resource caps were checked only in the NES manual, so the computer versions may differ slightly.</p>
+
+      <h3>The goal, the clock and the villain <span class="chip hi">VERIFIED</span></h3>
+      <p>Gao Qiu, the Imperial Minister of War, holds the real power and usually sits in the capital, Kaifeng. You win by defeating his army and killing him. You can attack his outlying prefectures at any time. To attack his <em>home</em> prefecture you need the <strong>Imperial Edict</strong>. Every January the Emperor looks for a champion: if your Popularity is above 250 at that check, you get the Edict and keep it even if your Popularity later falls.<sup class="cite"><a href="#s5">5</a></sup><sup class="cite"><a href="#s6">6</a></sup></p>
+      <p>You lose if:</p>
+      <ul>
+        <li>January 1127 arrives and the Northern Barbarians invade (historically the Jurchen Jin)</li>
+        <li>your Good Fellow dies, is captured, or becomes a Criminal</li>
+        <li>another Good Fellow kills Gao Qiu first</li>
+      </ul>
+
+      <h3>Scenarios and the Good Fellows <span class="chip hi">VERIFIED</span></h3>
+      <p>There are four scenarios, starting in 1101, 1103, 1104 and 1105. You play one of ten "Good Fellows" from the novel: Lu Zhishen, Shi Jin, Song Jiang, Lin Chong, Wu Song, Yang Zhi, Chao Gai, Li Kui, Li Jun and Li Ying. Scenarios offer 5, 7, 5 and 4 of them. Up to seven people can play hot-seat on one machine, and a zero-player mode lets the computer play itself.<sup class="cite"><a href="#s5">5</a></sup></p>
+      <p>When you start, you adjust your hero's Body, Strength, Dexterity and Wisdom within that character's limits. Integrity, Mercy and Courage are fixed. The Japanese confirmation screen shows Shi Jin with Body 100, Strength 93, Dexterity 83, Wisdom 49, Integrity 74, Mercy 69 and Courage 95.<span class="chip ob">OBSERVED</span></p>
+
+      <h3>The map: 49 prefectures <span class="chip hi">VERIFIED</span></h3>
+      <p>Song China is split into 49 numbered prefectures. You can only attack prefectures that border one you hold. Each prefecture has the values below. The Japanese and English labels are matched from the main screens of the Japanese and English versions, which list them in the same order.<span class="chip ob">OBSERVED</span><sup class="cite"><a href="#s5">5</a></sup><sup class="cite"><a href="#s6">6</a></sup></p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>English</th><th>Japanese</th><th class="num">Max (NES)</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>Gold</td><td class="jp">金</td><td class="num">9999</td><td>Money. Collected as tax in January.</td></tr>
+          <tr><td>Food</td><td class="jp">食糧</td><td class="num">9999</td><td>Feeds the army. Also collected in January. An attacker that runs out loses the battle.</td></tr>
+          <tr><td>Metal</td><td class="jp">鉄</td><td class="num">999</td><td>Needed to make weapons. Comes only from Solicit and cannot be sold.<sup class="cite"><a href="#s7">7</a></sup></td></tr>
+          <tr><td>Fur</td><td class="jp">毛皮</td><td class="num">999</td><td>From hunting or buying. Can be sold for gold.<sup class="cite"><a href="#s7">7</a></sup></td></tr>
+          <tr><td>Rate</td><td class="jp">物価</td><td class="num">100</td><td>Market price index. Normally 50; changes every month.</td></tr>
+          <tr><td>Heroes</td><td class="jp">強者</td><td class="num">castles × 5</td><td>Named characters stationed here.</td></tr>
+          <tr><td>Men</td><td class="jp">小者</td><td class="num">–</td><td>Soldiers.</td></tr>
+          <tr><td>Arms</td><td class="jp">武装</td><td class="num">100</td><td>How well equipped the troops are.</td></tr>
+          <tr><td>Skill</td><td class="jp">訓練</td><td class="num">100</td><td>How well trained the troops are. Building ships needs 70+.</td></tr>
+          <tr><td>People</td><td class="jp">人物</td><td class="num">–</td><td>Shown on the main screen. Its exact meaning is not confirmed; it likely counts people in town you could recruit.<span class="chip lo">INFERENCE</span></td></tr>
+          <tr><td>Castles</td><td class="jp">城</td><td class="num">7</td><td>Fortifications. Limits how many heroes the prefecture can hold.</td></tr>
+          <tr><td>Support</td><td class="jp">共鳴</td><td class="num">100</td><td>Popular support. Below 40, no January taxes; between 40 and 55, riots can happen.</td></tr>
+          <tr><td>Flood</td><td class="jp">治水</td><td class="num">100</td><td>Flood control.</td></tr>
+          <tr><td>Land</td><td class="jp">肥沃</td><td class="num">100</td><td>Farmland productivity.</td></tr>
+          <tr><td>Wealth</td><td class="jp">繁栄</td><td class="num">100</td><td>How prosperous the citizens are.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prose">
+      <p>Prefectures can also have a <strong>Shipyard</strong> and a <strong>Smithy</strong>. Each one shows both a <em>Ruler</em> (the hero governing it) and an <em>Owner</em> (the faction leader it belongs to); the DOS screen shows prefecture 45 ruled by Cai De Zhang and owned by Gao Qiu.<span class="chip ob">OBSERVED</span> Arms, Skill, Flood, Land, Wealth and Support all decay over time, so prefectures need regular upkeep.</p>
+
+      <h3>Characters <span class="chip hi">VERIFIED</span></h3>
+      <p>There are 255 characters, so the novel's 108 heroes are only part of the cast. Every character uses the same attributes:<sup class="cite"><a href="#s6">6</a></sup></p>
+      <ul>
+        <li><strong>Body</strong> <span lang="ja">体力</span>, <strong>Strength</strong> <span lang="ja">腕力</span>, <strong>Dexterity</strong> <span lang="ja">技量</span>, <strong>Wisdom</strong> <span lang="ja">知力</span>: abilities, max 100. Body works like hit points and is spent by some commands.</li>
+        <li><strong>Integrity</strong> <span lang="ja">忠義</span>, <strong>Mercy</strong> <span lang="ja">仁愛</span>, <strong>Courage</strong> <span lang="ja">勇気</span>: fixed personality values, max 100.</li>
+        <li><strong>Popularity</strong>: max 999. It drives the Imperial Edict.</li>
+        <li><strong>Loyalty</strong>: how firmly a follower is bound to you.</li>
+        <li>Also <strong>Men</strong> (troops led), <strong>Steersman</strong> (river skill), <strong>Ship</strong>, <strong>Position</strong> and <strong>Serves</strong> (whom they follow).</li>
+      </ul>
+      <p>Characters also carry a social label. The screenshots show "young master" (<span lang="ja">若旦那</span>), "elder" (<span lang="ja">長者</span>), "outlaw" (<span lang="ja">無法者</span>) and, on the NES, "Robed Scholar".<span class="chip ob">OBSERVED</span> The reverse-engineered Mac save data stores each hero as a 24-byte record and marks them as ruler, recruit or townsperson.<sup class="cite"><a href="#s13">13</a></sup></p>
+      <p class="small">"Skill" is the prefecture's troop training. The personal fighting stat is Dexterity.</p>
+
+      <h3>Turns: one command per prefecture per month <span class="chip hi">VERIFIED</span></h3>
+      <p>The game runs in monthly turns, starting in January. Each occupied prefecture gets one command per month, and the order changes randomly every month. The NES calls each slot a "rotation". You give orders directly in your home prefecture and in any prefecture held by a sworn Brother or Sister. Other chieftains act on their own under a standing order: Entrust, Develop or Expand.<sup class="cite"><a href="#s5">5</a></sup><sup class="cite"><a href="#s7">7</a></sup></p>
+      <p>The Japanese prompt reads "your orders (0–16)?".<span class="chip ob">OBSERVED</span> A Good Fellow in exile, with no prefecture, gets a much shorter menu: the DOS screen shows Li Kui in exile with "your orders (0–6)?".<span class="chip ob">OBSERVED</span></p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th class="num">#</th><th>Command</th><th>Options</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>Fight</td><td>War, Beasts</td><td>Invade a neighbouring prefecture, or hunt down wild beasts that appear at the start of a season.</td></tr>
+          <tr><td class="num">2</td><td>Service</td><td>Flood, Farm, Build</td><td>Improve the prefecture. Costs 15 Body; raises Support.</td></tr>
+          <tr><td class="num">3</td><td>Make</td><td>Ships, Weapons</td><td>Needs a capable hero. Weapons need Metal.</td></tr>
+          <tr><td class="num">4</td><td>Move</td><td>Hero, Supplies, To Exile</td><td>Move heroes to a neighbouring prefecture, or supplies to any prefecture you hold.</td></tr>
+          <tr><td class="num">5</td><td>Ally</td><td>Treaty, Invite</td><td>A treaty stops war between Good Fellows. Invite brings another Good Fellow's band into yours.</td></tr>
+          <tr><td class="num">6</td><td>Travel</td><td>Return, Market, Downtown, Smithy, Shipyard</td><td>Trade, recruit and buy. Downtown is where you recruit.</td></tr>
+          <tr><td class="num">7</td><td>Solicit</td><td>Gold, Metal</td><td>Extort from the population. Lowers Support and can fail.</td></tr>
+          <tr><td class="num">8</td><td>Hunt</td><td>Food, Fur</td><td>Not possible in winter.</td></tr>
+          <tr><td class="num">9</td><td>Heroes</td><td>Brother, Exile, Promote, Orders</td><td>Swear brotherhood, banish, promote, or set a chieftain's standing order.</td></tr>
+          <tr><td class="num">10</td><td>Organize</td><td>Hire Men, Give Men, Ships</td><td>Recruit and redistribute troops.</td></tr>
+          <tr><td class="num">11</td><td>Train</td><td>–</td><td>Raises troop training (Skill).</td></tr>
+          <tr><td class="num">12</td><td>Feast</td><td>–</td><td>Costs gold. Restores Body and raises loyalty.</td></tr>
+          <tr><td class="num">13</td><td>Rest</td><td>–</td><td>Restores 10 Body.</td></tr>
+          <tr><td class="num">14</td><td>Give</td><td>Citizens, Hero</td><td>Food to citizens raises Support. Gold to a hero raises loyalty.</td></tr>
+          <tr><td class="num">15</td><td>View</td><td>Home, Other, Domain, Allies</td><td>Information screens.</td></tr>
+          <tr><td class="num">16</td><td>Other</td><td>Save, Wait, Quit</td><td>System functions.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small prose">Command list from a GameFAQs guide to the NES version.<sup class="cite"><a href="#s7">7</a></sup> <span class="chip md">SINGLE SOURCE</span> The manuals confirm that there are 16 main commands.</p>
+
+    <div class="prose">
+      <h3>Economy, seasons and events <span class="chip hi">VERIFIED</span></h3>
+      <ul>
+        <li><strong>Taxes</strong> in gold and food come once a year, in January, and only if Support is at least 40. The NES manual contradicts itself on whether exactly 40 counts.</li>
+        <li><strong>Seasons</strong> change in March, June, September and December. Spring is March–May, summer June–August, autumn September–November, winter December–February.</li>
+        <li><strong>Seasonal events:</strong>
+          <ul>
+            <li>summer typhoons</li>
+            <li>winter snowstorms, which block Move and Fight</li>
+            <li>festivals in spring and autumn</li>
+            <li>wild beasts</li>
+            <li>epidemics, in any season</li>
+          </ul>
+        </li>
+        <li><strong>Riots</strong> can break out any month while Support is between 40 and 55, and troops may desert.</li>
+        <li><strong>Gao Qiu's demands.</strong> The minister periodically demands about a quarter to a third of a prefecture's gold.<sup class="cite"><a href="#s7">7</a></sup> <span class="chip md">SINGLE SOURCE</span></li>
+      </ul>
+
+      <h3>Recruiting and loyalty <span class="chip md">SINGLE SOURCE</span></h3>
+      <ul>
+        <li><strong>Downtown</strong> has three options:
+          <ul>
+            <li><em>Recruit</em> someone in town</li>
+            <li><em>Divine</em> whether a person is willing to join (1 gold each)</li>
+            <li>buy <em>Rumors</em> about 7 people elsewhere (10 gold)</li>
+          </ul>
+          The Japanese screenshot shows exactly these three: <span lang="ja">仲間にする / 可能性を占う / 噂話を聞く</span>.<span class="chip ob">OBSERVED</span></li>
+        <li>Newcomers who arrive at the start of a season may ask to join you.</li>
+        <li>Gifts of gold and Feasts raise loyalty; above 50 gold per gift the effect drops off.</li>
+        <li>A hero with loyalty 95+ can become a sworn <strong>Brother</strong>. Brothers' prefectures take your direct orders.</li>
+        <li><strong>Invite</strong> merges another Good Fellow into your band, for 150–250 gold per hero.</li>
+        <li>Captured enemies can be recruited, imprisoned, exiled or executed.<sup class="cite"><a href="#s10">10</a></sup></li>
+      </ul>
+
+      <h3>Popularity <span class="chip md">SINGLE SOURCE</span></h3>
+      <p>Each of your prefectures with Support of 40 or more adds 12 Popularity, and you lose those 12 if its Support drops below 40. Killing a beast adds 5 (3 for a failed attempt). Taking Liangshan (Lian Shan Bo, the outlaws' marsh fortress in the novel) adds 100. A failed recruitment costs 1. Gao Qiu's home is usually prefecture 23.<sup class="cite"><a href="#s7">7</a></sup></p>
+
+      <h3>Battles on a hex map <span class="chip hi">VERIFIED</span></h3>
+      <p>A battle lasts one month, split into 30 daily turns, and each hero gets one command per day. Each hex holds one unit (a hero and their men), and each side fields at most 10 units. The attacker places units on 10 deployment hexes; the defender chooses among 20 numbered hexes.<sup class="cite"><a href="#s5">5</a></sup></p>
+    </div>
+
+    <div class="tablewrap" style="max-width: 900px">
+      <table>
+        <thead><tr><th>Terrain</th><th class="num">Move cost</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Plains</td><td class="num">3</td><td></td></tr>
+          <tr><td>Forest</td><td class="num">4</td><td></td></tr>
+          <tr><td>Castle</td><td class="num">4</td><td>Attacker wins by holding every castle for a full turn.</td></tr>
+          <tr><td>Hills</td><td class="num">5</td><td></td></tr>
+          <tr><td>Marsh</td><td class="num">5</td><td>Freezes in winter.</td></tr>
+          <tr><td>River</td><td class="num">4 / 8</td><td>4 for Steersmen, 8 for others. Needs a ship; only 1 hex of movement on entry. Freezes in winter.</td></tr>
+          <tr><td>Mountain</td><td class="num">–</td><td>Impassable.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prose">
+      <ul>
+        <li><strong>Weather</strong> changes daily between Clear, Clouds, Rain and Snow. Wind direction decides how fire spreads.</li>
+        <li><strong>Commands:</strong>
+          <ul>
+            <li>Move (Regular or Charge)</li>
+            <li>Attack (Melee, Archery, Magic, Duel)</li>
+            <li>Rest</li>
+            <li>Special (Fireball, Put Out, Reinforce)</li>
+            <li>Flee</li>
+            <li>View</li>
+          </ul>
+          The Japanese PC screen shows the same six: Move, Attack, Rest, Special, Retreat, Info.<span class="chip ob">OBSERVED</span></li>
+        <li><strong>Fireball</strong> needs Wisdom 60+ and doesn't work in rain or snow. <strong>Magic</strong> needs Wisdom 80+, Body 50+ and a cloudy day. A <strong>Duel</strong> is one-on-one until one hero's Body reaches 0.</li>
+        <li><strong>The defender wins</strong> if 30 days pass.</li>
+        <li><strong>The attacker wins</strong> by doing any one of these:
+          <ul>
+            <li>destroying every deployed enemy</li>
+            <li>capturing or driving off the defending ruler</li>
+            <li>holding all castles for a full turn</li>
+            <li>starving the defenders</li>
+          </ul>
+        </li>
+        <li><strong>The attacker loses early</strong> if it runs out of food or its own ruler is captured or flees.</li>
+      </ul>
+      <p class="small">Contemporary reviewers found the game very close to KOEI's <em>Romance of the Three Kingdoms</em>; one called it "too similar".<sup class="cite"><a href="#s9">9</a></sup> The bandit-hero theme, the Edict and the 1127 deadline are what set it apart.</p>
+    </div>
+
+    <!-- 3 -->
+    <h2 id="screens"><span class="num">03</span>The screens</h2>
+    <div class="prose">
+      <p>I looked at 14 screenshots from five versions: the Japanese PC original (Steam), DOS, a likely Amiga capture, NES/Famicom, and the 1996 PlayStation remake. The diagrams below are my own redrawings of the layouts, drawn to the original pixel proportions. The screenshots are linked rather than embedded because they are KOEI Tecmo's images. Every version uses the same structure: <strong>info panel top left, map top right, picture window bottom left, message line bottom right</strong>, all on black inside ornamental borders.<span class="chip ob">OBSERVED</span></p>
+    </div>
+
+    <h3>Main strategic screen (Japanese PC original, 640×400)</h3>
+    <figure class="screen">
+      <svg viewBox="0 0 640 400" role="img" aria-labelledby="fig1-t">
+        <title id="fig1-t">Diagram of the main strategic screen: portrait and prefecture statistics top left, colour-coded map of 49 prefectures top right, animation window bottom left, command prompt bottom right.</title>
+        <defs>
+          <pattern id="weave" width="8" height="8" patternUnits="userSpaceOnUse">
+            <rect width="8" height="8" class="w-fa"/>
+            <rect x="0" y="0" width="4" height="4" class="w-fb"/>
+            <rect x="4" y="4" width="4" height="4" class="w-fb"/>
+          </pattern>
+        </defs>
+        <rect width="640" height="400" fill="url(#weave)"/>
+        <!-- info panel -->
+        <rect x="8" y="8" width="276" height="282" class="w-scr"/>
+        <rect x="10" y="10" width="272" height="86" class="w-ink"/>
+        <rect x="16" y="14" width="62" height="78" class="w-fb"/>
+        <rect x="21" y="19" width="52" height="68" class="w-dark"/>
+        <circle cx="47" cy="44" r="13" class="w-fb" opacity="0.85"/>
+        <path d="M27 87 Q47 58 67 87 Z" class="w-fb" opacity="0.85"/>
+        <text x="88" y="30" class="w-txt" style="fill: var(--scr-dark)">1105  January</text>
+        <text x="196" y="30" class="w-txt w-red">6 Qingzhou</text>
+        <text x="88" y="56" class="w-txt" style="fill: var(--scr-dark)">Ruler: Lu Zhishen</text>
+        <text x="236" y="56" class="w-txt" style="fill: var(--sea)">Winter</text>
+        <text x="88" y="82" class="w-txt" style="fill: var(--scr-dark)">Owner: Lu Zhishen</text>
+        <g class="w-txt">
+          <text x="18" y="126" class="w-yel">Gold</text><text x="90" y="126" class="w-ink" text-anchor="end">899</text>
+          <text x="18" y="160" class="w-yel">Food</text><text x="90" y="160" class="w-ink" text-anchor="end">1397</text>
+          <text x="18" y="194" class="w-yel">Metal</text><text x="90" y="194" class="w-ink" text-anchor="end">8</text>
+          <text x="18" y="228" class="w-yel">Fur</text><text x="90" y="228" class="w-ink" text-anchor="end">14</text>
+          <text x="18" y="262" class="w-yel">Rate</text><text x="90" y="262" class="w-ink" text-anchor="end">39</text>
+          <text x="104" y="126" class="w-yel">Heroes</text><text x="184" y="126" class="w-ink" text-anchor="end">7</text>
+          <text x="104" y="160" class="w-yel">Men</text><text x="184" y="160" class="w-ink" text-anchor="end">228</text>
+          <text x="104" y="194" class="w-yel">Arms</text><text x="184" y="194" class="w-ink" text-anchor="end">37</text>
+          <text x="104" y="228" class="w-yel">Skill</text><text x="184" y="228" class="w-ink" text-anchor="end">36</text>
+          <text x="104" y="262" class="w-yel">People</text><text x="184" y="262" class="w-ink" text-anchor="end">4</text>
+          <text x="196" y="126" class="w-yel">Castles</text><text x="276" y="126" class="w-ink" text-anchor="end">2</text>
+          <text x="196" y="160" class="w-yel">Support</text><text x="276" y="160" class="w-ink" text-anchor="end">50</text>
+          <text x="196" y="194" class="w-yel">Flood</text><text x="276" y="194" class="w-ink" text-anchor="end">43</text>
+          <text x="196" y="228" class="w-yel">Land</text><text x="276" y="228" class="w-ink" text-anchor="end">31</text>
+          <text x="196" y="262" class="w-yel">Wealth</text><text x="276" y="262" class="w-ink" text-anchor="end">31</text>
+        </g>
+        <!-- map panel -->
+        <rect x="292" y="8" width="340" height="282" class="w-land"/>
+        <path d="M560 8 L632 8 L632 290 L610 290 C598 262 616 240 600 214 C586 190 606 170 592 146 C580 124 600 104 586 82 C576 62 590 40 572 26 Z" class="w-sea"/>
+        <path d="M292 290 L292 236 L306 250 L318 226 L332 248 L344 232 L356 262 L364 290 Z" class="w-mount"/>
+        <g id="prefs"></g>
+        <!-- picture window -->
+        <rect x="8" y="298" width="276" height="94" class="w-scr"/>
+        <rect x="8" y="298" width="276" height="10" class="w-fa"/>
+        <path d="M8 308 L30 308 C26 340 34 370 24 392 L8 392 Z" class="w-curtain"/>
+        <path d="M284 308 L262 308 C266 340 258 370 268 392 L284 392 Z" class="w-curtain"/>
+        <text x="146" y="356" class="w-txt-s w-ink" text-anchor="middle" opacity="0.55">animation window</text>
+        <!-- message window -->
+        <rect x="292" y="298" width="340" height="94" class="w-scr"/>
+        <rect x="292" y="298" width="6" height="94" class="w-green"/>
+        <rect x="626" y="298" width="6" height="94" class="w-green"/>
+        <g class="w-dark"><rect x="292" y="320" width="6" height="2"/><rect x="292" y="352" width="6" height="2"/><rect x="626" y="320" width="6" height="2"/><rect x="626" y="352" width="6" height="2"/></g>
+        <text x="308" y="324" class="w-txt w-ink">Lord Lu Zhishen, your orders (0-16)?</text>
+        <!-- markers -->
+        <g class="w-mark">
+          <g transform="translate(268 80)"><circle r="10"/><text>1</text></g>
+          <g transform="translate(268 280)"><circle r="10"/><text>2</text></g>
+          <g transform="translate(618 22)"><circle r="10"/><text>3</text></g>
+          <g transform="translate(270 312)"><circle r="10"/><text>4</text></g>
+          <g transform="translate(618 312)"><circle r="10"/><text>5</text></g>
+        </g>
+      </svg>
+      <figcaption><b>Figure 1.</b> Redrawn from the Steam screenshot of Lu Zhishen's turn in January 1105, with the values from that screenshot. In the original, the faction colours and the 49 prefecture shapes fill the whole map.</figcaption>
+      <ul class="keys">
+        <li><span class="k">1</span><span><b>Header.</b> A framed portrait of the prefecture's ruler, then year, month, prefecture number and name, season, Ruler and Owner, set on a white panel.</span></li>
+        <li><span class="k">2</span><span><b>Statistics grid.</b> 15 values in three columns, with yellow labels and white numbers on black.</span></li>
+        <li><span class="k">3</span><span><b>Map of China.</b> Pale green land with a dotted texture, numbered prefectures, solid colours for each faction, a blue sea with wave pattern on the east, and brown mountains in the south-west.</span></li>
+        <li><span class="k">4</span><span><b>Picture window.</b> Framed by theatre curtains. Shows short animations and event vignettes such as boar hunts and troops marching out.<sup class="cite"><a href="#s8">8</a></sup></span></li>
+        <li><span class="k">5</span><span><b>Message line</b> between bamboo poles. Every command is picked by typing a number.</span></li>
+      </ul>
+    </figure>
+
+    <h3>Battle screen (Japanese PC original, winter)</h3>
+    <figure class="screen">
+      <svg viewBox="0 0 640 400" role="img" aria-labelledby="fig2-t">
+        <title id="fig2-t">Diagram of the battle screen: a left column with date and day counter, attacker and defender strengths with weather and wind, and a six-option command menu; a large snowy hex battlefield on the right with mountains, a frozen lake, a castle and unit tokens.</title>
+        <rect width="640" height="400" class="w-scr"/>
+        <rect x="6" y="6" width="172" height="58" class="w-ink"/>
+        <text x="92" y="24" class="w-txt" text-anchor="middle" style="fill: var(--scr-dark)">1106 Feb · 9 Yizhou</text>
+        <text x="92" y="40" class="w-txt" text-anchor="middle" style="fill: var(--sea)">- Day 6 -</text>
+        <text x="92" y="57" class="w-txt-s" text-anchor="middle" style="fill: var(--scr-dark)">Ruler: Li Ying</text>
+        <rect x="7" y="71" width="170" height="140" class="w-stroke-yel"/>
+        <text x="16" y="92" class="w-txt-s w-mag">Attacker</text>
+        <text x="168" y="92" class="w-txt-s w-cyan" text-anchor="end">Defender</text>
+        <text x="16" y="108" class="w-txt-s w-ink">Lu Zhishen</text>
+        <text x="168" y="108" class="w-txt-s w-ink" text-anchor="end">Li Ying</text>
+        <circle cx="84" cy="104" r="5" class="w-yel"/>
+        <path d="M100 110 L94 98 M94 98 L94 104 M94 98 L100 98" style="stroke: var(--scr-yel); stroke-width: 2; fill: none"/>
+        <g class="w-txt-s w-ink">
+          <text x="58" y="140" text-anchor="end">553</text><rect x="84" y="132" width="10" height="10" class="w-red"/><text x="168" y="140" text-anchor="end">1824</text>
+          <text x="58" y="168" text-anchor="end">4</text><rect x="84" y="160" width="10" height="10" class="w-blue"/><text x="168" y="168" text-anchor="end">3/3</text>
+          <text x="58" y="196" text-anchor="end">204</text><rect x="84" y="188" width="10" height="10" class="w-fgreen"/><text x="168" y="196" text-anchor="end">143/143</text>
+        </g>
+        <rect x="7" y="219" width="170" height="174" class="w-stroke-green"/>
+        <g class="w-txt-s w-ink">
+          <text x="16" y="242">1 Move  2 Attack  3 Rest</text>
+          <text x="16" y="264">4 Special 5 Retreat 6 Info</text>
+          <text x="16" y="296">Lord Lu Zhishen,</text>
+          <text x="16" y="314">orders for Lu Zhishen</text>
+          <text x="16" y="332">(1-6)?</text>
+        </g>
+        <g id="hexes"></g>
+        <g class="w-mark">
+          <g transform="translate(164 20)"><circle r="10"/><text>1</text></g>
+          <g transform="translate(164 82)"><circle r="10"/><text>2</text></g>
+          <g transform="translate(164 232)"><circle r="10"/><text>3</text></g>
+          <g transform="translate(620 22)"><circle r="10"/><text>4</text></g>
+        </g>
+      </svg>
+      <figcaption><b>Figure 2.</b> Redrawn from the Steam battle screenshot: Lu Zhishen attacks Li Ying's Yizhou on day 6 of a winter battle. The terrain layout is illustrative; the panel contents match the screenshot.</figcaption>
+      <ul class="keys">
+        <li><span class="k">1</span><span><b>Date and day counter</b> out of the 30-day limit.</span></li>
+        <li><span class="k">2</span><span><b>Force comparison.</b> Attacker in magenta, defender in cyan, with a weather icon and a wind arrow between them. Three icon rows compare the sides; the first is troop strength, and the others look like unit count and food.<span class="chip lo">INFERENCE</span></span></li>
+        <li><span class="k">3</span><span><b>Six numbered commands</b> and a prompt naming the hero who is acting.</span></li>
+        <li><span class="k">4</span><span><b>Hex battlefield.</b> Snow-white plains, blue-white forest, grey-blue mountains with red rock, pale cyan frozen water and a castle tile. Units are small flag tokens with their troop count.</span></li>
+      </ul>
+    </figure>
+
+    <h3>The Western versions</h3>
+    <div class="prose">
+      <ul>
+        <li><strong>DOS</strong> uses the same layout, with English labels and the same art. One screenshot shows a second portrait panel for a Good Fellow "In Exile" (Li Kui: Body 94, Bandits 0, Men 0, Popularity 0) under the prefecture's own header.<span class="chip ob">OBSERVED</span> The title screen shows a blue-green dragon coiled around the logo over a panoramic river landscape, with "©1989 KOEI CO., LTD." below it.<span class="chip ob">OBSERVED</span></li>
+        <li><strong>Amiga.</strong> An English capture with the full 15-value grid and the prompt "Brother Li Ying, your orders?" has no number range. That fits the Amiga's mouse menus, so it is probably the Amiga version.<span class="chip lo">INFERENCE</span> One reviewer liked the "colorful hexagon battlefield" and the detailed portraits. They also reported that the menus sometimes went transparent and that messages vanished too quickly to read.<sup class="cite"><a href="#s8">8</a></sup></li>
+        <li><strong>NES and Famicom</strong> squeeze the layout into 256×224 (Figure 3). The stats panel drops to six values, the map becomes a scrolling window that shows only part of China, and the border is a salmon checkerboard (brown on the Famicom). The NES intro shows Emperor Hui Zhong in a speech bubble: "Is there no one to challenge this villain?"<span class="chip ob">OBSERVED</span></li>
+      </ul>
+    </div>
+
+    <figure class="screen nes">
+      <svg viewBox="0 0 256 224" role="img" aria-labelledby="fig3-t">
+        <title id="fig3-t">Diagram of the NES main screen: a checkerboard border, portrait and six statistics top left, a cropped scrolling map top right, and a message box underneath.</title>
+        <defs>
+          <pattern id="check" width="4" height="4" patternUnits="userSpaceOnUse">
+            <rect width="4" height="4" style="fill: #D98C79"/>
+            <rect width="2" height="2" style="fill: #7A3A2E"/>
+            <rect x="2" y="2" width="2" height="2" style="fill: #7A3A2E"/>
+          </pattern>
+        </defs>
+        <rect width="256" height="224" fill="url(#check)"/>
+        <rect x="14" y="14" width="80" height="106" class="w-scr"/>
+        <rect x="16" y="16" width="76" height="102" style="fill: none; stroke: var(--scr-ink); stroke-width: 1"/>
+        <rect x="20" y="20" width="28" height="30" class="w-fb"/>
+        <circle cx="34" cy="32" r="7" class="w-dark"/>
+        <text x="54" y="30" class="w-txt-xs w-ink">10:</text>
+        <text x="54" y="40" class="w-txt-xs w-ink">Jun</text>
+        <text x="20" y="60" class="w-txt-xs w-ink">Robed</text>
+        <text x="20" y="69" class="w-txt-xs w-ink">Scholar</text>
+        <g class="w-txt-xs w-ink">
+          <text x="20" y="80">Gold</text><text x="88" y="80" text-anchor="end">219</text>
+          <text x="20" y="87">Food</text><text x="88" y="87" text-anchor="end">857</text>
+          <text x="20" y="94">Heroes</text><text x="88" y="94" text-anchor="end">4</text>
+          <text x="20" y="101">Men</text><text x="88" y="101" text-anchor="end">166</text>
+          <text x="20" y="108">Arms</text><text x="88" y="108" text-anchor="end">18</text>
+          <text x="20" y="115">Skill</text><text x="88" y="115" text-anchor="end">18</text>
+        </g>
+        <rect x="96" y="14" width="146" height="106" class="w-land"/>
+        <path d="M216 14 L242 14 L242 120 L232 120 C226 100 236 86 228 66 C222 50 230 34 220 22 Z" class="w-sea" style="opacity:0.55"/>
+        <g class="w-txt-xs" style="fill: #2C3520">
+          <text x="104" y="28">0</text><text x="122" y="26">4</text><text x="142" y="26">5</text>
+          <text x="104" y="48">11</text><text x="126" y="46">10</text><text x="146" y="48">6</text><text x="168" y="40">7</text>
+          <text x="106" y="68">20</text><text x="130" y="66">21</text><text x="152" y="64">9</text><text x="176" y="66">22</text>
+          <text x="104" y="88">36</text><text x="128" y="88">31</text><text x="152" y="86">32</text><text x="178" y="88">33</text>
+          <text x="110" y="108">45</text><text x="136" y="108">46</text><text x="160" y="108">48</text>
+        </g>
+        <g class="w-fgreen"><rect x="114" y="42" width="5" height="5"/><rect x="140" y="62" width="5" height="5"/><rect x="170" y="82" width="5" height="5"/><rect x="128" y="102" width="5" height="5"/></g>
+        <rect x="14" y="126" width="228" height="44" class="w-scr"/>
+        <text x="20" y="140" class="w-txt-xs w-ink">Rotation 16</text>
+      </svg>
+      <figcaption><b>Figure 3.</b> NES main screen redrawn at its native 256×224, with values from the RegVault screenshot.</figcaption>
+    </figure>
+
+    <h3>Other screens worth recreating</h3>
+    <div class="prose">
+      <ul>
+        <li><strong>Hero confirmation.</strong> A gold-framed portrait card on black with a green woven frame, inside a gold brick border. It shows the seven stats and asks "Is this OK (Y/N)?".</li>
+        <li><strong>Downtown.</strong> A list of townspeople with social labels on the left. On the right are the three Downtown options, a tavern vignette of men drinking, and an advisor portrait who comments on whether the person will join ("Yu Baosi seems interested in you; he will surely join").</li>
+        <li><strong>Victory message.</strong> A theatre-curtain swag over a vignette of cheering soldiers: "We have routed Li Ying's army. Yizhou is ours."</li>
+        <li><strong>1996 remake.</strong> A completely different look, with anime-style FMV cut-scenes (an archer drawing a bow against a sunset gradient), painted portraits, a stone-and-parchment textured map with purple terrain, icon buttons instead of numbers, and photographic event pictures (an epidemic scene).</li>
+      </ul>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Screenshot</th><th>Version</th><th>Link</th></tr></thead>
+        <tbody>
+          <tr><td>Hero confirmation (Shi Jin)</td><td>Japanese PC (Steam)</td><td><a href="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/521680/ss_f570f3396b047cd0faf4ff08e948591281341193.1920x1080.jpg" target="_blank" rel="noopener">Steam CDN</a></td></tr>
+          <tr><td>Main strategic screen</td><td>Japanese PC (Steam)</td><td><a href="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/521680/ss_e14429a325de6067fdbc719dd8432ff2aecfe246.1920x1080.jpg" target="_blank" rel="noopener">Steam CDN</a></td></tr>
+          <tr><td>Winter hex battle</td><td>Japanese PC (Steam)</td><td><a href="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/521680/ss_be774d7f92585df5cea8f919045f2f0d55cb8954.1920x1080.jpg" target="_blank" rel="noopener">Steam CDN</a></td></tr>
+          <tr><td>Downtown recruiting</td><td>Japanese PC (Steam)</td><td><a href="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/521680/ss_9f55dc76980da7d044660046db22f09c3711da19.1920x1080.jpg" target="_blank" rel="noopener">Steam CDN</a></td></tr>
+          <tr><td>Victory message</td><td>Japanese PC (Steam)</td><td><a href="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/521680/ss_46885c96af2160e0176e31f775727f0408d7f687.1920x1080.jpg" target="_blank" rel="noopener">Steam CDN</a></td></tr>
+          <tr><td>Main screen with exile panel</td><td>DOS</td><td><a href="https://images.launchbox-app.com//9c9d74fa-6aa2-492d-a5eb-1e4d0e7829fd.png" target="_blank" rel="noopener">LaunchBox</a></td></tr>
+          <tr><td>Title screen</td><td>DOS</td><td><a href="https://images.launchbox-app.com//e05b8348-b6a4-4baa-bf6d-28e117660962.png" target="_blank" rel="noopener">LaunchBox</a></td></tr>
+          <tr><td>English main screen, full stats grid</td><td>Probably Amiga</td><td><a href="https://api.regvault.org/assets/images/amiga/ca1915883863403701219b99465e65d4/screenshot_01.webp" target="_blank" rel="noopener">RegVault</a></td></tr>
+          <tr><td>Main screen</td><td>NES</td><td><a href="https://api.regvault.org/assets/images/nes/0674af730456699f9311ffab36fa9528/screenshot_01.png" target="_blank" rel="noopener">RegVault</a></td></tr>
+          <tr><td>Title screen</td><td>NES</td><td><a href="https://api.regvault.org/assets/images/nes/0674af730456699f9311ffab36fa9528/screenshot_02.png" target="_blank" rel="noopener">RegVault</a></td></tr>
+          <tr><td>Main screen (kana text)</td><td>Famicom</td><td><a href="https://api.regvault.org/assets/images/nes/0674af730456699f9311ffab36fa9528/screenshot_03.webp" target="_blank" rel="noopener">RegVault</a></td></tr>
+          <tr><td>Emperor's intro and prefecture view</td><td>NES (filed under Amiga)</td><td><a href="https://api.regvault.org/assets/images/amiga/ca1915883863403701219b99465e65d4/screenshot_02.webp" target="_blank" rel="noopener">RegVault 2</a> · <a href="https://api.regvault.org/assets/images/amiga/ca1915883863403701219b99465e65d4/screenshot_03.webp" target="_blank" rel="noopener">RegVault 3</a></td></tr>
+          <tr><td>FMV, map and event screens</td><td>1996 PlayStation remake</td><td><a href="https://psxdatacenter.com/games/J/S/SLPS-00521.html" target="_blank" rel="noopener">PSX Data Center (14 shots)</a></td></tr>
+          <tr><td>Full galleries for every platform</td><td>All</td><td><a href="https://www.mobygames.com/game/2137/bandit-kings-of-ancient-china/screenshots/" target="_blank" rel="noopener">MobyGames</a> (not checked: it blocked automated access)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 4 -->
+    <h2 id="art"><span class="num">04</span>Art, colour and sound</h2>
+    <div class="prose">
+      <h3>Portraits <span class="chip md">SINGLE SOURCE</span></h3>
+      <p>The portrait files hold 260 portraits on the PC-98, X68000 and Chinese DOS versions (255 characters plus extras) and 258 on the PC-88, which lacks the two emperors. PC-98 portraits are 64×80 pixels; PC-88 and Chinese DOS store them at half height, 64×40. All use 3 bits per pixel, which means <strong>8 colours</strong>.<sup class="cite"><a href="#s15">15</a></sup></p>
+      <p>The style is dramatic Japanese illustration of the late 1980s:<span class="chip ob">OBSERVED</span></p>
+      <ul>
+        <li>strong black outlines and exaggerated, expressive faces, such as Lu Zhishen as a scowling bald monk</li>
+        <li>shading built from dither patterns</li>
+        <li>each portrait mounted like a hanging scroll, in a parchment frame with gold rollers</li>
+      </ul>
+
+      <h3>Palette and texture <span class="chip ob">OBSERVED</span></h3>
+      <p>The Japanese PC screens look like a classic 8-colour digital palette: black, blue, red, magenta, green, cyan, yellow and white. Every in-between tone (pale green land, tan, orange, brown mountains) is an ordered or stippled dither of two of those colours. Faction colours on the map are flat fills. Text is white, with yellow labels, on solid black windows.</p>
+      <p>Ornament carries a lot of the period feel:</p>
+      <ul>
+        <li>red-and-gold woven or zigzag borders around the screen</li>
+        <li>green bamboo poles around the message line</li>
+        <li>green theatre curtains around the picture window</li>
+        <li>a red Greek-key band on the NES title screen</li>
+      </ul>
+      <p>Battle tiles are textured hex icons with a seasonal palette: in winter, plains turn white and lakes ice-cyan.</p>
+
+      <h3>Illustrations and box art <span class="chip ob">OBSERVED</span></h3>
+      <ul>
+        <li><strong>Event vignettes.</strong> Small square pictures (a tavern, cheering soldiers, a boar hunt). Reviewers called them "humorous animations".<sup class="cite"><a href="#s8">8</a></sup></li>
+        <li><strong>Box and store art.</strong> Painted in a dramatic Western fantasy-poster style, with a looming bearded figure over a crowd of heroes and dragons.</li>
+        <li><strong>1996 remake.</strong> Swaps all of this for anime cel animation and painted textures.</li>
+      </ul>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Version</th><th>Display</th><th>Colour</th><th>Sound</th><th>Basis</th></tr></thead>
+        <tbody>
+          <tr><td>PC-88 / PC-98 (and Steam)</td><td>640×400 on Steam; PC-88 hardware is 640×200, PC-98 is 640×400</td><td>8-colour look, portraits 3 bpp</td><td>FM synthesis</td><td>Screenshots, soundtrack CD<sup class="cite"><a href="#s12">12</a></sup>; hardware specs from general knowledge</td></tr>
+          <tr><td>MSX2</td><td>Not confirmed</td><td>Not confirmed</td><td>PSG + MSX-Music</td><td>Generation MSX<sup class="cite"><a href="#s11">11</a></sup></td></tr>
+          <tr><td>MS-DOS</td><td>EGA 640×350 or CGA 640×200</td><td>16 (EGA) / 2 (CGA)</td><td>No sound cards supported, per one review</td><td>Contemporary review<sup class="cite"><a href="#s9">9</a></sup></td></tr>
+          <tr><td>Amiga</td><td>Not confirmed</td><td>"Colorful"</td><td>Sampled sounds, "catchy" tunes</td><td>Compute! review<sup class="cite"><a href="#s8">8</a></sup></td></tr>
+          <tr><td>NES / Famicom</td><td>256×240 (224 visible)</td><td>NES palette</td><td>NES sound chip</td><td>Screenshots, decompilation notes<sup class="cite"><a href="#s14">14</a></sup></td></tr>
+          <tr><td>PlayStation / Saturn (1996)</td><td>320×240 captures</td><td>Full colour</td><td>New arrangements of the original songs</td><td>PSX Data Center<sup class="cite"><a href="#s10">10</a></sup></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose">
+      <h3>Music <span class="chip hi">VERIFIED</span></h3>
+      <p>KOEI's own album <em>Koei Original BGM Vol. 2</em> (25 November 1989) contains the PC-88 FM soundtrack, with sheet music for every track.<sup class="cite"><a href="#s12">12</a></sup> Its track list gives a useful audio spec for a remake. Each season has its own <strong>main theme and war theme</strong>, so the music changes four times a year, plus cues for key events:</p>
+    </div>
+    <ol class="tracks" start="18">
+      <li>Pre-opening <span class="jp">プレ・オープニング</span></li>
+      <li>Opening <span class="jp">オープニング</span></li>
+      <li>Game setup <span class="jp">初期設定</span></li>
+      <li>Main · Winter <span class="jp">メイン・冬</span></li>
+      <li>War · Winter <span class="jp">戦争・冬</span></li>
+      <li>Main · Spring <span class="jp">メイン・春</span></li>
+      <li>Dispatch <span class="jp">出向</span></li>
+      <li>War · Spring <span class="jp">戦争・春</span></li>
+      <li>Main · Summer <span class="jp">メイン・夏</span></li>
+      <li>War · Summer <span class="jp">戦争・夏</span></li>
+      <li>Defeat <span class="jp">敗退</span></li>
+      <li>Game over <span class="jp">ゲームオーバー</span></li>
+      <li>Main · Autumn <span class="jp">メイン・秋</span></li>
+      <li>War · Autumn <span class="jp">戦争・秋</span></li>
+      <li>Victory <span class="jp">勝利</span></li>
+      <li>After the battle <span class="jp">戦後処理</span></li>
+      <li>Liangshan Marsh <span class="jp">梁山泊</span></li>
+      <li>Imperial Edict <span class="jp">勅命</span></li>
+      <li>Unification <span class="jp">統一</span></li>
+      <li>Ending <span class="jp">エンディング</span></li>
+    </ol>
+    <p class="small prose">Tracks 38–39 on the album are upgraded-version medleys. The composer could not be confirmed. A music-rip archive credits Kou Shibusawa, KOEI's producer pen name, for the Amiga version, which is not reliable.<sup class="cite"><a href="#s26">26</a></sup></p>
+
+    <!-- 5 -->
+    <h2 id="remake"><span class="num">05</span>Remake evaluation</h2>
+
+    <dl class="score">
+      <div><dt>Rules documentation</dt><dd><b>Strong.</b> Two official manuals, a detailed strategy guide and reverse-engineered data layouts.</dd></div>
+      <div><dt>Technical difficulty</dt><dd><b>Low to moderate.</b> A 49-node graph, a few hundred records, a monthly loop and a small hex battle. Nothing needs a game engine.</dd></div>
+      <div><dt>Computer opponents and balance</dt><dd><b>Moderate to high.</b> Rival chieftains, Gao Qiu's behaviour and diplomacy need tuning. This is where KOEI's games got their feel.</dd></div>
+      <div><dt>Art and audio</dt><dd><b>High.</b> Portraits are the biggest single job. You can cut the cast well below 255.</dd></div>
+      <div><dt>Legal risk</dt><dd><b>Low</b> for an original game in the same genre and setting. <b>High</b> if you reuse KOEI's name, art, music, text or stat tables, or copy its screens closely.<span class="chip lo">INFERENCE</span></dd></div>
+    </dl>
+
+    <h3>What you can use and what you must make</h3>
+    <div class="twocol">
+      <div class="box free">
+        <h4>Free to use</h4>
+        <ul>
+          <li>The <em>Water Margin</em> story, its 108 heroes, Gao Qiu, Liangshan Marsh and Song-dynasty geography. The novel dates from the 14th century, with a complete 1589 printed edition, far beyond any copyright term.<sup class="cite"><a href="#s21">21</a></sup> Use your own wording and romanisation, not a modern translation's.</li>
+          <li>General mechanics: monthly turns, prefecture economies, recruiting, loyalty, a deadline, hex battles with weather and fire. Copyright protects a game's artistic expression, not its rules.<sup class="cite"><a href="#s16">16</a></sup><sup class="cite"><a href="#s17">17</a></sup></li>
+          <li>Real history: the Jurchen invasion of 1127, Emperor Huizong and Kaifeng.</li>
+        </ul>
+      </div>
+      <div class="box make">
+        <h4>Make it yourself</h4>
+        <ul>
+          <li>The <strong>name</strong>. Don't use "Bandit Kings of Ancient China" or "Suikoden"; Konami holds and renewed the "Suikoden" trademark in 2022.<sup class="cite"><a href="#s20">20</a></sup></li>
+          <li>All <strong>art</strong>: portraits, map, tiles, vignettes, title and box art.</li>
+          <li>All <strong>music and sound</strong>, including new melodies, not arrangements of KOEI's.</li>
+          <li>All <strong>text</strong>: event messages and descriptions.</li>
+          <li><strong>Screen layout and look.</strong> Don't reproduce KOEI's framed panels pixel for pixel; design your own.</li>
+          <li><strong>Numbers.</strong> Set the stats for each character and the starting scenario values yourself, for example derived from the novel, not copied from the game data.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="prose">
+      <h3>Legal notes <span class="chip md">MIXED SOURCES</span></h3>
+      <p class="small">This is research, not legal advice. Get a lawyer's view before you publish anything commercially.</p>
+      <ul>
+        <li><strong>Close look-and-feel copies can infringe.</strong> In <em>Tetris Holding v. Xio Interactive</em> (US, 2012), the court held that copyright covers a game's artistic aspects, not its mechanics. It still found a clone infringing because its visual expression was "akin to literal copying", even though no code or images were copied. It also upheld a trade-dress claim.<sup class="cite"><a href="#s16">16</a></sup> Being "inspired by" is fine; copying the screens closely is risky.</li>
+        <li><strong>KOEI Tecmo enforces its copyright.</strong> It sued the parent company of Chinese publisher Bekko Games over KOEI screenshots used in Bekko's ads. Bekko settled, apologised, deleted the images and paid ¥5 million.<sup class="cite"><a href="#s18">18</a></sup> KOEI's legal department has also said publicly that it tolerates fan works in general but removes thousands of inappropriate ones each year.<sup class="cite"><a href="#s19">19</a></sup> I found no record of KOEI acting against a fan remake of an old title, but that only means none was found.</li>
+        <li><strong>The game is still on sale.</strong> KOEI Tecmo sells it on Steam, so it is an active commercial product, not abandonware.<sup class="cite"><a href="#s1">1</a></sup></li>
+        <li><strong>Data in the EU.</strong> If you publish from the EU, the sui generis database right can protect a substantial extraction of a database that took real investment. Copying the full 255-character stat table and scenario data could fall under it. Designing your own values avoids the question.<span class="chip lo">INFERENCE</span></li>
+        <li><strong>Permission.</strong> If you want the original name or art, the only safe route is to ask KOEI Tecmo.<sup class="cite"><a href="#s17">17</a></sup></li>
+      </ul>
+
+      <h3>Existing projects <span class="chip hi">VERIFIED</span></h3>
+      <p>No playable fan remake, open-source clone or browser version turned up. There are three hobbyist reverse-engineering projects. They are useful for understanding the rules and data shapes, but not for copying data or assets:</p>
+      <ul>
+        <li><a href="https://github.com/danhealy/bandit_kings_modding" target="_blank" rel="noopener">danhealy/bandit_kings_modding</a>: Ruby scripts that read and write the Mac version's 21,122-byte save and scenario files. They document 24-byte hero records, 32-byte prefecture records and 28-byte tactical records.<sup class="cite"><a href="#s13">13</a></sup></li>
+        <li><a href="https://github.com/chrisaacson69/bk-decompiler" target="_blank" rel="noopener">chrisaacson69/bk-decompiler</a>: a decompilation of the NES version. Its claim to be complete could not be confirmed.<sup class="cite"><a href="#s14">14</a></sup></li>
+        <li><a href="https://github.com/tzengyuxio/kaodata" target="_blank" rel="noopener">tzengyuxio/kaodata</a>: an MIT-licensed tool that extracts portraits and character data from your own copy of KOEI games. The tool's licence does not cover the extracted art, which still belongs to KOEI Tecmo.<sup class="cite"><a href="#s15">15</a></sup></li>
+      </ul>
+
+      <h3>Recommended web stack <span class="chip lo">INFERENCE</span></h3>
+      <ul>
+        <li><strong>TypeScript + Vite</strong>, deployed as a static site (GitHub Pages, Netlify or Cloudflare Pages). Single-player and hot-seat need no server, just like the original.</li>
+        <li><strong>A pure, deterministic rules engine</strong> with no DOM code. Game state is plain JSON, and a seeded random generator drives events and combat. You get save games, replays and unit tests (Vitest) almost for free.</li>
+        <li><strong>The strategic map in SVG.</strong> 49 prefecture shapes are easy to click, recolour by faction and scale on any screen.</li>
+        <li><strong>The battle in Canvas 2D</strong> (or PixiJS if you want lots of animation). Use axial hex coordinates; Red Blob Games' <a href="https://www.redblobgames.com/grids/hexagons/" target="_blank" rel="noopener">hexagon guide</a> covers movement cost, line of sight and pathfinding. With at most 20 units on a small map, performance is not an issue.</li>
+        <li><strong>Menus and panels in plain HTML/CSS</strong>, or a light framework such as Svelte or Preact. Keep number-key shortcuts as a nod to the original.</li>
+        <li><strong>Saves in IndexedDB</strong>, with JSON export so players can back them up.</li>
+        <li><strong>Computer turns in a Web Worker</strong> if the AI gets heavy, so the page stays responsive.</li>
+        <li><strong>Audio through the Web Audio API.</strong> Use OGG files, or tracker modules with a JS player if you want a chiptune or FM feel.</li>
+      </ul>
+
+      <h3>Assets to create</h3>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Asset</th><th>Original count</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Character portraits</td><td class="num">255 (+ extras)</td><td>The biggest job. Start with the 10 Good Fellows, Gao Qiu and about 40 key heroes; the rest can share generic portraits.</td></tr>
+          <tr><td>Strategic map</td><td class="num">1 map, 49 regions</td><td>Draw your own from public-domain historical maps of Song China. The region boundaries are yours to design.</td></tr>
+          <tr><td>Hex terrain tiles</td><td class="num">~7 × 4 seasons</td><td>Plains, forest, hills, marsh, river, mountain, castle, with frozen and snowy winter variants and fire overlays.</td></tr>
+          <tr><td>Unit tokens and battle effects</td><td class="num">–</td><td>Attacker and defender tokens, fireball, fire, magic, weather and wind icons.</td></tr>
+          <tr><td>Event vignettes</td><td class="num">~20–30</td><td>Tavern, market, feast, hunt, beasts, typhoon, snow, festival, epidemic, riot, victory, defeat, Edict.</td></tr>
+          <tr><td>UI frames and ornament</td><td class="num">–</td><td>Your own border system. The original's woven and bamboo motifs are a style you can echo without copying.</td></tr>
+          <tr><td>Title and key art</td><td class="num">1–2</td><td>New logo under a new name.</td></tr>
+          <tr><td>Music</td><td class="num">~20 cues</td><td>Follow the seasonal main/war structure above, with all-new compositions.</td></tr>
+          <tr><td>Sound effects</td><td class="num">~20</td><td>Combat, fire, menu, events.</td></tr>
+          <tr><td>Text and data</td><td class="num">255 characters</td><td>Names from the novel; your own stats, descriptions and event messages.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prose">
+      <h3>A sensible build order <span class="chip lo">INFERENCE</span></h3>
+      <ol>
+        <li>Data model and rules engine: prefectures, characters, monthly loop, January taxes, seasons and decay. Test it headless.</li>
+        <li>The SVG strategic map and the three-panel main screen, with the 16 commands.</li>
+        <li>The hex battle: deploy, move, attack, weather, fire, and the 30-day limit.</li>
+        <li>Computer chieftains, Gao Qiu's behaviour, diplomacy and recruiting.</li>
+        <li>Popularity, the Imperial Edict, the 1127 deadline and the endings.</li>
+        <li>Art and audio, replacing placeholders.</li>
+      </ol>
+    </div>
+
+    <!-- 6 -->
+    <h2 id="open"><span class="num">06</span>Open questions and caveats</h2>
+    <div class="prose">
+      <ul>
+        <li><strong>Version differences in the rules.</strong> Battle numbers and resource caps come from the NES manual only. The PC, Amiga and 1996 versions may differ.</li>
+        <li><strong>Composer.</strong> Not confirmed; the album page gives no credits.</li>
+        <li><strong>Display specs</strong> for the Mac, Amiga and MSX2 versions are not confirmed.</li>
+        <li><strong>Meaning of some values.</strong> The exact meaning of "People" and of the second and third rows on the battle force display is unconfirmed.</li>
+        <li><strong>Trademarks.</strong> Whether KOEI Tecmo still holds a trademark on "Bandit Kings of Ancient China" was not checked.</li>
+        <li><strong>Release dates.</strong> The original is dated 1988 or 1989 depending on the source, and the MSX2 date is August or November 1989.</li>
+        <li><strong>How this was researched.</strong> A multi-agent search fetched 19 sources and extracted 83 claims. 25 claims were put through a three-vote check: 20 were confirmed and 5 refuted. The screenshot and art findings come from my own look at 14 screenshots. MobyGames and Hall of Light blocked automated access, so their galleries are linked but were not checked.</li>
+      </ul>
+    </div>
+
+    <h2 id="sources"><span class="num">07</span>Sources</h2>
+    <ol class="sources">
+      <li id="s1"><a href="https://store.steampowered.com/app/521680" target="_blank" rel="noopener">Steam store: Bandit Kings of Ancient China</a><span class="q">PRIMARY</span></li>
+      <li id="s2"><a href="https://www.gematsu.com/2016/12/kou-shibusawa-archives-now-available-pc-via-steam-japan" target="_blank" rel="noopener">Gematsu: Kou Shibusawa Archives now available on Steam Japan (Dec 2016)</a><span class="q">NEWS</span></li>
+      <li id="s3"><a href="https://en.wikipedia.org/wiki/Bandit_Kings_of_Ancient_China" target="_blank" rel="noopener">Wikipedia: Bandit Kings of Ancient China</a><span class="q">SECONDARY</span></li>
+      <li id="s4"><a href="https://ja.wikipedia.org/wiki/%E6%B0%B4%E6%BB%B8%E4%BC%9D%E3%83%BB%E5%A4%A9%E5%91%BD%E3%81%AE%E8%AA%93%E3%81%84" target="_blank" rel="noopener">Japanese Wikipedia: 水滸伝・天命の誓い</a><span class="q">SECONDARY</span></li>
+      <li id="s5"><a href="https://archive.org/download/NESManuals/Bandit%20Kings%20of%20Ancient%20China%20%28USA%29_text.pdf" target="_blank" rel="noopener">NES instruction manual (USA), Internet Archive</a><span class="q">PRIMARY</span></li>
+      <li id="s6"><a href="https://gamesdatabase.org/Media/SYSTEM/Commodore_Amiga//Manual/formated/Bandit_Kings_of_Ancient_China_-_1991_-_Infogrames.htm" target="_blank" rel="noopener">Amiga manual (Infogrames, 1991), Games Database</a><span class="q">PRIMARY</span></li>
+      <li id="s7"><a href="https://gamefaqs.gamespot.com/nes/587106-bandit-kings-of-ancient-china/faqs/48064" target="_blank" rel="noopener">GameFAQs: NES guide</a><span class="q">FAN GUIDE</span></li>
+      <li id="s8"><a href="https://atarimagazines.com/compute/issue128/94_Bandit_Kings_of_Anci.php" target="_blank" rel="noopener">Compute! issue 128: Amiga review</a><span class="q">REVIEW</span></li>
+      <li id="s9"><a href="https://mirror.cyberbits.eu/textfiles.com/games/REVIEWS/bndtking.rev" target="_blank" rel="noopener">Contemporary IBM PC review (textfiles.com mirror)</a><span class="q">REVIEW</span></li>
+      <li id="s10"><a href="https://psxdatacenter.com/games/J/S/SLPS-00521.html" target="_blank" rel="noopener">PSX Data Center: SLPS-00521</a>, plus <a href="https://psxdatacenter.com/games/J/S/SLPM-86188.html" target="_blank" rel="noopener">SLPM-86188</a> and <a href="https://psxdatacenter.com/games/J/S/SLPM-86743.html" target="_blank" rel="noopener">SLPM-86743</a><span class="q">DATABASE</span></li>
+      <li id="s11"><a href="https://generation-msx.nl/software/koei/bandit-kings-of-ancient-china/1835" target="_blank" rel="noopener">Generation MSX: MSX2 entry</a><span class="q">DATABASE</span></li>
+      <li id="s12"><a href="https://www.gamecity.ne.jp/media/cd/bgm/bgm02.htm" target="_blank" rel="noopener">KOEI: Original BGM Vol. 2 album page</a><span class="q">PRIMARY</span></li>
+      <li id="s13"><a href="https://github.com/danhealy/bandit_kings_modding" target="_blank" rel="noopener">GitHub: danhealy/bandit_kings_modding</a><span class="q">CODE</span></li>
+      <li id="s14"><a href="https://github.com/chrisaacson69/bk-decompiler" target="_blank" rel="noopener">GitHub: chrisaacson69/bk-decompiler</a><span class="q">CODE</span></li>
+      <li id="s15"><a href="https://github.com/tzengyuxio/kaodata" target="_blank" rel="noopener">GitHub: tzengyuxio/kaodata</a><span class="q">CODE</span></li>
+      <li id="s16"><a href="https://www.loeb.com/en/insights/publications/2012/06/tetris-holding-llc-v-xio-interactive-inc" target="_blank" rel="noopener">Loeb &amp; Loeb: Tetris Holding v. Xio Interactive (2012)</a><span class="q">LEGAL</span></li>
+      <li id="s17"><a href="https://gamedeveloper.com/game-platforms/analysis-clone-games-fan-games----legal-issues" target="_blank" rel="noopener">Game Developer: clone games and fan games, legal issues</a><span class="q">LEGAL</span></li>
+      <li id="s18"><a href="https://www.siliconera.com/koei-tecmo-and-bekko-settled-their-copyright-lawsuit-outside-of-court/" target="_blank" rel="noopener">Siliconera: KOEI Tecmo and Bekko settle copyright lawsuit</a><span class="q">NEWS</span></li>
+      <li id="s19"><a href="https://automaton-media.com/en/news/theyre-like-daughters-to-us-around-3000-pieces-of-offensive-dead-or-alive-fanart-gets-removed-by-koei-tecmo-yearly/" target="_blank" rel="noopener">Automaton: KOEI Tecmo on fan works and takedowns</a><span class="q">NEWS</span></li>
+      <li id="s20"><a href="https://videogameschronicle.com/news/ahead-of-tgs-konami-renewed-its-suikoden-trademark" target="_blank" rel="noopener">VGC: Konami renewed its Suikoden trademark</a><span class="q">NEWS</span></li>
+      <li id="s21"><a href="https://en.wikipedia.org/wiki/Water_Margin" target="_blank" rel="noopener">Wikipedia: Water Margin</a><span class="q">SECONDARY</span></li>
+      <li id="s22"><a href="https://gamesdb.launchbox-app.com/games/details/18684-bandit-kings-of-ancient-china" target="_blank" rel="noopener">LaunchBox Games Database: DOS entry</a><span class="q">SCREENSHOTS</span></li>
+      <li id="s23"><a href="https://www.regvault.org/game/nes/bandit-kings-of-ancient-china" target="_blank" rel="noopener">RegVault: NES entry</a><span class="q">SCREENSHOTS</span></li>
+      <li id="s24"><a href="https://www.regvault.org/game/amiga/bandit-kings-of-ancient-china" target="_blank" rel="noopener">RegVault: Amiga entry</a><span class="q">SCREENSHOTS</span></li>
+      <li id="s25"><a href="https://www.mobygames.com/game/2137/bandit-kings-of-ancient-china/screenshots/" target="_blank" rel="noopener">MobyGames: screenshot galleries</a><span class="q">NOT CHECKED</span></li>
+      <li id="s26"><a href="https://www.exotica.org.uk/wiki/Bandit_Kings_of_Ancient_China" target="_blank" rel="noopener">ExoticA: Amiga music rip entry</a><span class="q">UNRELIABLE</span></li>
+    </ol>
+  </main>
+</div>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(name, attrs, parent) {
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+
+  // Figure 1: schematic prefecture markers, roughly where the original numbers sit.
+  var prefs = document.getElementById("prefs");
+  if (prefs) {
+    var P = [
+      [1, 404, 30, ""], [2, 432, 26, ""], [3, 466, 34, ""], [5, 548, 34, "w-cream"], [6, 548, 66, "w-fgreen"], [7, 588, 64, ""],
+      [12, 402, 64, ""], [11, 470, 76, "w-red"], [10, 512, 86, "w-orange"], [8, 560, 96, "w-mag"],
+      [15, 318, 88, ""], [13, 350, 74, ""], [19, 454, 104, "w-red"], [20, 500, 112, "w-orange"], [22, 554, 126, "w-orange"],
+      [16, 316, 128, ""], [25, 368, 124, "w-blue"], [24, 440, 136, "w-red"], [23, 478, 130, "w-red"], [21, 524, 140, "w-cream"],
+      [40, 336, 168, ""], [27, 394, 162, ""], [28, 438, 170, ""], [30, 482, 168, ""], [31, 524, 180, ""], [32, 570, 168, ""],
+      [41, 360, 214, ""], [43, 420, 226, "w-red"], [36, 466, 206, ""], [35, 506, 210, ""], [34, 568, 206, "w-red"], [33, 596, 216, ""],
+      [42, 392, 262, ""], [44, 440, 262, ""], [45, 478, 250, "w-red"], [47, 512, 240, "w-red"], [49, 548, 252, ""], [46, 488, 278, ""], [48, 530, 278, ""]
+    ];
+    P.forEach(function (p) {
+      var c = el("circle", { cx: p[1], cy: p[2], r: 13, "class": "w-pref " + (p[3] || "w-land") }, prefs);
+      if (!p[3]) c.setAttribute("style", "fill: var(--land)");
+      var t = el("text", { x: p[1], y: p[2] + 4, "text-anchor": "middle", "class": "w-txt-s", style: "fill: #1E2616" }, prefs);
+      t.textContent = p[0];
+    });
+  }
+
+  // Figure 2: flat-top hex battlefield with a winter palette.
+  var g = document.getElementById("hexes");
+  if (g) {
+    var s = 16, w = s * 2, h = Math.sqrt(3) * s;
+    var x0 = 196, y0 = 14;
+    for (var q = 0; q < 18; q++) {
+      for (var r = 0; r < 14; r++) {
+        var cx = x0 + q * (w * 0.75);
+        var cy = y0 + r * h + (q % 2 ? h / 2 : 0);
+        if (cx + s > 636 || cy + h / 2 > 396) continue;
+        var cls = "hex-plain";
+        if (q + r < 7 || (q < 8 && r < 3) || (q > 6 && q < 13 && r < 2)) cls = "hex-mount";
+        else if ((q > 13 && r > 3 && r < 8) || (q === 13 && r > 4 && r < 7)) cls = "hex-ice";
+        else if ((q * 7 + r * 3) % 9 === 0 || (r > 10 && q % 3 === 0)) cls = "hex-forest";
+        if (q === 9 && r === 8) cls = "hex-castle";
+        var pts = [];
+        for (var i = 0; i < 6; i++) {
+          var a = Math.PI / 180 * (60 * i);
+          pts.push((cx + s * Math.cos(a)).toFixed(1) + "," + (cy + s * Math.sin(a)).toFixed(1));
+        }
+        el("polygon", { points: pts.join(" "), "class": cls }, g);
+      }
+    }
+    var units = [[7, 6, "a", 79], [7, 7, "a", 16], [8, 8, "a", 65], [8, 5, "d", 44], [9, 6, "d", 28], [9, 7, "d", 21], [10, 8, "d", 84]];
+    units.forEach(function (u) {
+      var cx = x0 + u[0] * (w * 0.75);
+      var cy = y0 + u[1] * h + (u[0] % 2 ? h / 2 : 0);
+      el("rect", { x: cx - 11, y: cy - 7, width: 22, height: 14, "class": u[2] === "a" ? "u-a" : "u-d" }, g);
+      var t = el("text", { x: cx, y: cy + 4, "text-anchor": "middle", "class": "w-txt-xs w-ink" }, g);
+      t.textContent = u[3];
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
