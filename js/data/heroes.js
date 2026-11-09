@@ -158,7 +158,7 @@
   H('Zeng Nong', 'Master of Zeng Fortress', 'boss', { hair: 'turban', beard: 'full', age: 'old' }, {}, { role: 'boss' });
 
   // The court of Gao Qiu.
-  H('Gao Qiu', 'Minister of War', 'official', { hair: 'official', beard: 'mustache', brows: 'thin', mood: 'sly', garb: 11 }, { body: 75, str: 48, dex: 72, wis: 78, int: 6, mercy: 8, courage: 35 }, { role: 'villain' });
+  H('Gao Qiu', 'Minister of War', 'official', { hair: 'official', beard: 'mustache', brows: 'thin', mood: 'sly', garb: 11 }, { body: 75, str: 48, dex: 72, wis: 78, int: 74, mercy: 66, courage: 77 }, { role: 'villain' });
   H('Cai Jing', 'Grand Tutor', 'official', { age: 'old', hair: 'official', beard: 'long', mood: 'sly', garb: 21 }, { wis: 90 }, { role: 'official' });
   H('Tong Guan', 'Privy Commander', 'official', { hair: 'official', beard: 'none', mood: 'sly', garb: 11 }, { str: 60, courage: 55 }, { role: 'official' });
   H('Yang Jian', 'Grand Guardian', 'official', { hair: 'official', beard: 'none', mood: 'sly' }, {}, { role: 'official' });

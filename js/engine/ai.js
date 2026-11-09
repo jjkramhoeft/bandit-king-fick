@@ -49,6 +49,8 @@
         // New players get their first year to find their feet.
         if (tf && tf.human && elapsed < 12) return;
         if (f.kind === 'imperial' && tf && tf.kind === 'imperial') return;
+        // The court keeps to its cities and leaves wild land to the bandits.
+        if (f.kind === 'imperial' && !tf) return;
         var ratio = power / W.defenseValue(s, n);
         if (tf && tf.human) ratio /= 1 + BK.Setup.DIFFICULTY[s.difficulty || 'normal'].caution;
         if (tf && tf.kind === 'goodfellow' && f.kind === 'goodfellow' && !f.human) ratio *= 0.85;
@@ -99,8 +101,16 @@
         if (p.food > 300) return act(A.giveCitizens(s, prefId, Math.round(p.food * 0.25)));
         if (worker.body > 15) return act(A.service(s, prefId, worker.id, rng.pick(['farm', 'build'])));
       }
+      // Freshly settled wild land has bare fields and markets; build them up before an army,
+      // or the prefecture never earns the taxes to pay one.
+      if (Math.min(p.land, p.wealth) < 35 && worker.body > 15) {
+        return act(A.service(s, prefId, worker.id, p.land < p.wealth ? 'farm' : 'build'));
+      }
       var room = hs.reduce(function (a, c) { return a + W.menCap(c) - c.men; }, 0);
-      if (room > 20 && p.gold > 150 && men < hs.length * 65) {
+      // Once an Edict turns the court against Gao Qiu, the capital's purse is closed to him and
+      // Kaifeng can no longer hire fresh men (see Econ.january for the yearly levy).
+      var closed = f.kind === 'imperial' && prefId === BK.MapData.capital && s.factions.some(function (x) { return x.edict; });
+      if (!closed && room > 20 && p.gold > A.hireCost(p) * 10 && men < hs.length * 65) {
         var recruit = best(hs, function (c) { return W.menCap(c) - c.men; });
         var n = Math.floor(Math.min(W.menCap(recruit) - recruit.men, p.gold * 0.6 / A.hireCost(p)));
         if (n > 5) return act(A.hireMen(s, prefId, recruit.id, n));
@@ -111,7 +121,7 @@
         var smith = best(hs.filter(A.canForge), function (c) { return c.dex + c.wis; });
         if (p.metal >= 10 && smith && smith.body > 15) return act(A.makeWeapons(s, prefId, smith.id, p.metal));
         if (p.smithy && p.gold > 300 && ruler.body > 10) return travel(A.buyArms(s, prefId, Math.round(p.gold * 0.3)));
-        if (p.support > 55 && strongest.body > 15) return act(A.solicit(s, prefId, strongest.id, 'metal'));
+        if (p.support > 45 && strongest.body > 15) return act(A.solicit(s, prefId, strongest.id, 'metal'));
       }
       if (f.kind === 'goodfellow' && hs.length < p.castles * 5 && ruler.body > 10 && rng.chance(0.5)) {
         var towns = W.townsAt(s, prefId);

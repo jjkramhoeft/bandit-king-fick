@@ -99,6 +99,23 @@
     return p;
   }
 
+  // Land nobody rules is poor: empty granaries, no drilled soldiers or weapons, neglected dikes and
+  // fields, and a people too wary to pay taxes until a new ruler wins them over.
+  function makeWild(p, rng) {
+    p.gold = rng.int(0, 30);
+    p.food = rng.int(0, 60);
+    p.metal = 0;
+    p.fur = rng.int(0, 10);
+    p.arms = 0;
+    p.skill = 0;
+    p.support = rng.int(10, 30);
+    p.flood = BK.clamp(Math.round(p.flood / 2), 10, 35);
+    p.land = BK.clamp(Math.round(p.land / 2), 10, 35);
+    p.wealth = BK.clamp(Math.round(p.wealth / 2), 10, 35);
+    p.castles = rng.int(1, 2);
+    p.orders = 'develop';
+  }
+
   BK.Setup = {
     MAX_CHARS: MAX_CHARS,
     // empire: size of imperial garrisons; tax: human players' tax yield; caution: extra edge the
@@ -159,8 +176,9 @@
       s.imperial = imp.id;
       var boost = sc.imperialBoost;
 
-      // Prefectures that start with no ruler at all, waiting for a band to settle them.
-      var empty = sc.empty || [];
+      // The prefectures Gao Qiu's court governs. Every other prefecture nobody claims below starts
+      // as wild land with no ruler, waiting for a band to settle it.
+      var empire = sc.empire || [];
 
       // Good Fellows.
       var gfColor = {};
@@ -168,10 +186,12 @@
       Object.keys(sc.goodFellows).forEach(function (key) {
         var cfg = sc.goodFellows[key], c = byKey[key];
         var f = addFaction('goodfellow', c, gfColor[key]);
+        if (sc.pop != null) c.popEarned = sc.pop;
         if (cfg.exile) {
+          // An exile starts lean: no soldiers and only a few coins.
           f.exileAt = cfg.pref;
-          serve(c, f.id, cfg.pref, cfg.bandits || 15, 5, 100);
-          c.gold = 50;
+          serve(c, f.id, cfg.pref, 0, 5, 100);
+          c.gold = 10;
         } else {
           claim(cfg.pref, f, c);
           serve(c, f.id, cfg.pref, rng.int(60, 85), 5, 100);
@@ -181,7 +201,7 @@
         }
         cfg.followers.forEach(function (fk) {
           var h = byKey[fk];
-          serve(h, f.id, cfg.pref, cfg.exile ? rng.int(8, 15) : rng.int(25, 55),
+          serve(h, f.id, cfg.pref, cfg.exile ? 0 : rng.int(25, 55),
             h.arch === 'general' ? 3 : 2, rng.int(76, 95));
         });
       });
@@ -205,7 +225,7 @@
       });
 
       // Local strongmen who answer to nobody.
-      sc.locals.forEach(function (prefId) {
+      (sc.locals || []).forEach(function (prefId) {
         var ruler = genChar(s, rng, used, rng.pick(['officer', 'noble', 'brawler']), 'townsperson', 'Squire');
         var f = addFaction('local', ruler, BK.C.tan);
         claim(prefId, f, ruler);
@@ -213,13 +233,13 @@
         serve(genChar(s, rng, used, 'officer', 'townsperson', 'Soldier'), f.id, prefId, rng.int(25, 45), 1, rng.int(55, 80));
       });
 
-      // Named officials, then generic governors for every prefecture still unclaimed.
+      // Named officials, then generic governors for every empire prefecture still unclaimed.
       var dif = BK.Setup.DIFFICULTY[s.difficulty];
       var impMen = function (lo, hi) { return Math.min(W.MEN_MAX, Math.round(rng.int(lo, hi) * (1 + boost * 0.12) * dif.empire)); };
       Object.keys(sc.imperial).forEach(function (key) {
         var prefId = sc.imperial[key], c = byKey[key], p = W.pref(s, prefId);
         var isGao = key === 'Gao Qiu';
-        if (empty.indexOf(prefId) >= 0) return;
+        if (empire.indexOf(prefId) < 0) return;
         if (p.owner == null) claim(prefId, imp, c);
         else if (p.owner !== imp.id) return;
         if (isGao) serve(c, imp.id, prefId, impMen(95, 100), 5, 100);
@@ -228,7 +248,7 @@
       });
       W.pref(s, BK.MapData.capital).ruler = gao.id;
       s.prefs.forEach(function (p) {
-        if (p.owner == null && empty.indexOf(p.id) < 0) {
+        if (p.owner == null && empire.indexOf(p.id) >= 0) {
           var gov = genChar(s, rng, used, 'official', 'official', 'Official');
           claim(p.id, imp, gov);
           serve(gov, imp.id, p.id, impMen(40, 65), 3, rng.int(50, 80));
@@ -248,9 +268,13 @@
         }
       });
 
-      // Everyone not yet placed becomes a townsperson somewhere in the empire.
+      s.prefs.forEach(function (p) { if (p.owner == null) makeWild(p, rng); });
+
+      // Everyone not yet placed becomes a townsperson: named friends where the scenario puts them,
+      // the rest somewhere in the empire.
+      var townsfolk = sc.townsfolk || {};
       s.chars.forEach(function (c) {
-        if (c.status === 'free' && c.loc === 0) c.loc = rng.int(1, s.prefs.length);
+        if (c.status === 'free' && c.loc === 0) c.loc = townsfolk[c.key] || rng.int(1, s.prefs.length);
       });
       while (s.chars.length < MAX_CHARS) {
         var cls = rng.pick(BK.Heroes.TOWN_CLASS);

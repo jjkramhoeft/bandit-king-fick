@@ -43,6 +43,8 @@
         var tr = trs.filter(function (r) { return text(r.firstChild).replace(/ \*$/, '') === n; })[0];
         if (!tr) return;
         found++;
+        // Some pickers start with heroes already chosen; clicking those would drop them.
+        if (tr.classList.contains('sel')) return;
         AP.clicks++;
         click(tr);
       });
@@ -337,7 +339,11 @@
       var room = band.some(function (c) { return c.men < W.menCap(c) - 5; });
       if (room) return { cmd: 'Recruit Hero', steps: [{ t: 'menu', v: 'Gather bandits' }] };
       var weak = W.neighbors(here.id).filter(function (n) { return !W.pref(s, n).snowbound && W.defenseValue(s, n) < W.defenseValue(s, here.id); });
-      if (weak.length && !here.snowbound) return { cmd: 'Flee', steps: [{ t: 'pref', v: weak[0] }] };
+      if (weak.length && !here.snowbound && lead.body > 10) {
+        // The whole band follows; the follower picker only appears when there is someone to pick.
+        var others = band.filter(function (c) { return c.id !== f.leader; }).map(function (c) { return c.name; });
+        return { cmd: 'Flee', steps: [{ t: 'pref', v: weak[0] }].concat(others.length ? [{ t: 'heroes', v: others }] : []) };
+      }
       return { cmd: 'Rest', steps: [] };
     },
 

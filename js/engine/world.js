@@ -95,11 +95,13 @@
       var hero = 1 + ((c ? c.str : 50) - 50) / 250 + ((c ? c.courage : 50) - 50) / 400;
       return men * (0.6 + arms / 125) * (0.6 + skill / 125) * hero;
     },
+    // As in battle (Battle.fighters), a hero with no men still fights, worth one man per 5 Body.
+    fighters: function (c) { return c.men > 0 ? c.men : Math.floor(Math.max(0, c.body) / 5); },
     prefPower: function (s, prefId, heroes) {
       var p = W.pref(s, prefId);
       heroes = heroes || W.heroesAt(s, prefId);
       var sum = 0;
-      heroes.forEach(function (c) { sum += W.unitPower(c.men, p.arms, p.skill, c); });
+      heroes.forEach(function (c) { sum += W.unitPower(W.fighters(c), p.arms, p.skill, c); });
       return sum;
     },
     defenseValue: function (s, prefId) {

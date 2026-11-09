@@ -164,7 +164,10 @@ function exilePlan(s, fid) {
   const f = W.faction(s, fid), lead = W.leader(s, fid), band = W.exileBand(s, fid);
   const power = band.reduce((a, c) => a + W.unitPower(c.men, 25, 35, c), 0);
   const here = W.pref(s, f.exileAt);
-  if (!W.attackBlock(s, fid, here.id, here.id) && power > W.defenseValue(s, here.id) * 1.3) {
+  // Wild land is poor and cannot pay for soldiers, so gather a proper band before settling it.
+  const men = band.reduce((a, c) => a + c.men, 0);
+  const ready = here.owner == null ? men >= 60 : power > W.defenseValue(s, here.id) * 1.3;
+  if (!W.attackBlock(s, fid, here.id, here.id) && ready) {
     return { war: { fid, source: here.id, target: here.id, heroes: band.map(c => c.id), food: 0 } };
   }
   const towns = W.townsAt(s, here.id).filter(c => A.willJoin(s, fid, c, lead));

@@ -4,6 +4,9 @@ const assert = require('node:assert');
 const BK = require('./load.js');
 const headless = require('./headless-io.js');
 const W = BK.World;
+// In Scenario 2 Lu Zhishen holds Qingzhou (17); the battle tests send him against Yang Zhi's
+// Yizhou (21) next door.
+const FOE = 21;
 
 test('map has 49 connected prefectures with sensible borders', () => {
   const g = BK.MapGeo.build();
@@ -19,25 +22,122 @@ test('map has 49 connected prefectures with sensible borders', () => {
   assert.ok(g.terrain[BK.MapData.liangshan].lake, 'Liangshan Marsh lies in Yunzhou');
 });
 
-test('every scenario starts with 255 characters and every prefecture ruled but the empty ones', () => {
+test('every scenario starts with 255 characters, a small empire, and the rest of the map wild', () => {
   for (const sc of BK.Scenarios) {
     const s = BK.Setup.newGame({ scenarioId: sc.id, seed: 7, players: [{ key: Object.keys(sc.goodFellows)[0] }] });
     assert.strictEqual(s.chars.length, 255);
+    const held = new Set(sc.empire);
+    for (const key in sc.goodFellows) if (!sc.goodFellows[key].exile) held.add(sc.goodFellows[key].pref);
+    for (const key in sc.bosses) held.add(sc.bosses[key].pref);
     for (const p of s.prefs) {
-      if ((sc.empty || []).includes(p.id)) { assert.strictEqual(p.owner, null, sc.title + ': ' + p.name + ' starts empty'); continue; }
+      if (!held.has(p.id)) { assert.strictEqual(p.owner, null, sc.title + ': ' + p.name + ' starts wild'); continue; }
       assert.notStrictEqual(p.owner, null, sc.title + ': ' + p.name + ' has an owner');
       const r = s.chars[p.ruler];
       assert.strictEqual(r.loc, p.id);
       assert.strictEqual(r.faction, p.owner);
     }
+    assert.deepStrictEqual(W.factionPrefs(s, s.imperial).map(p => p.id).sort((a, b) => a - b), sc.empire.slice().sort((a, b) => a - b),
+      sc.title + ': the empire holds its core and nothing else');
+    for (const key in sc.imperial) assert.ok(sc.empire.includes(sc.imperial[key]), key + ' is stationed in an empire prefecture');
     assert.strictEqual(s.players.length, 1);
     assert.ok(s.factions[s.players[0].faction].human);
   }
+  const s1 = BK.Setup.newGame({ scenarioId: 1, seed: 7, players: [] });
+  assert.strictEqual(s1.prefs.filter(p => p.owner == null).length, 37, 'Scenario 1 opens with 37 wild prefectures');
+});
+
+test('wild land is poor', () => {
+  for (const seed of [1, 2, 3]) {
+    const s = BK.Setup.newGame({ scenarioId: 1, seed, players: [] });
+    for (const p of s.prefs.filter(x => x.owner == null)) {
+      assert.ok(p.gold <= 30 && p.food <= 60 && p.metal === 0, p.name + ' has little in store');
+      assert.strictEqual(p.arms, 0);
+      assert.strictEqual(p.skill, 0);
+      assert.ok(p.support < 40, p.name + ' pays no taxes yet');
+    }
+  }
+});
+
+test('Scenario 1 exiles start alone, unknown and without soldiers', () => {
+  const s = BK.Setup.newGame({ scenarioId: 1, seed: 5, players: [] });
+  const gfs = s.factions.filter(f => f.kind === 'goodfellow');
+  assert.deepStrictEqual(gfs.map(f => s.chars[f.leader].key).sort(), ['Lin Chong', 'Lu Zhishen', 'Shi Jin', 'Wu Song', 'Yang Zhi']);
+  for (const f of gfs) {
+    const band = W.exileBand(s, f.id);
+    assert.strictEqual(band.length, 1, s.chars[f.leader].name + ' is alone');
+    assert.strictEqual(band[0].men, 0);
+    assert.strictEqual(W.popularity(s, f.id), 0);
+  }
+  const chao = s.chars.find(c => c.key === 'Chao Gai');
+  assert.strictEqual(chao.status, 'free');
+  assert.strictEqual(chao.loc, 20, 'Chao Gai lives in Jizhou as a townsperson');
+  const lin = gfs.find(f => s.chars[f.leader].key === 'Lin Chong');
+  assert.strictEqual(lin.exileAt, BK.MapData.capital, 'Lin Chong hides in Kaifeng');
+  assert.match(W.attackBlock(s, lin.id, lin.exileAt, lin.exileAt) || '', /Edict/, 'and cannot settle there');
+  const shi = gfs.find(f => s.chars[f.leader].key === 'Shi Jin');
+  assert.strictEqual(s.chars[s.factions[W.pref(s, shi.exileAt).owner].leader].key, 'Zhu Wu', 'Shi Jin hides in Zhu Wu\'s hills');
+});
+
+test('Flee costs the leader 10 Body and leaves behind whoever is not chosen', () => {
+  const s = BK.Setup.newGame({ scenarioId: 4, seed: 4, players: [] });
+  const f = s.factions.find(x => s.chars[x.leader].key === 'Li Kui');
+  const lead = s.chars[f.leader], from = f.exileAt, to = W.neighbors(from).find(n => !W.pref(s, n).snowbound);
+  const jiao = W.exileBand(s, f.id).find(c => c.key === 'Jiao Ting');
+  lead.body = 9;
+  assert.ok(!BK.Actions.wander(s, f.id, to, []).ok, 'too tired to flee');
+  assert.strictEqual(f.exileAt, from);
+  lead.body = 50;
+  assert.ok(BK.Actions.wander(s, f.id, to, []).ok);
+  assert.strictEqual(lead.body, 40);
+  assert.strictEqual(f.exileAt, to);
+  assert.strictEqual(jiao.status, 'free', 'Jiao Ting stays behind');
+  assert.strictEqual(jiao.loc, from);
+  assert.deepStrictEqual(W.exileBand(s, f.id).map(c => c.id), [lead.id]);
+});
+
+test('the court never marches on wild land', () => {
+  const s = BK.Setup.newGame({ scenarioId: 1, seed: 3, players: [] });
+  const imp = s.factions[s.imperial];
+  for (let i = 0; i < 50; i++) {
+    for (const p of W.factionPrefs(s, s.imperial)) {
+      const plan = BK.AI.warPlan(s, p, imp);
+      if (plan) assert.notStrictEqual(W.pref(s, plan.target).owner, null, p.name + ' attacks ' + W.pref(s, plan.target).name);
+    }
+  }
+});
+
+test('heroes without men still count toward a prefecture\'s defense, as in battle', () => {
+  const s = BK.Setup.newGame({ scenarioId: 2, seed: 2, players: [] });
+  const hs = W.heroesAt(s, FOE);
+  hs.forEach(c => { c.men = 0; c.body = 80; });
+  assert.ok(W.defenseValue(s, FOE) > 8 * 2, 'unmanned heroes are not an open door');
+});
+
+test('Kaifeng hires no fresh men once an Edict is out', () => {
+  const run = (edict) => {
+    const s = BK.Setup.newGame({ scenarioId: 1, seed: 6, players: [] });
+    const cap = W.pref(s, BK.MapData.capital);
+    s.factions.find(f => f.kind === 'goodfellow').edict = edict;
+    let hired = 0;
+    for (let i = 0; i < 30; i++) {
+      cap.gold = 5000; cap.support = 80; cap.food = 9000;
+      W.heroesAt(s, cap.id).forEach(c => { c.men = 10; c.body = 100; });
+      BK.AI.decide(s, cap.id);
+      hired += W.menAt(s, cap.id) - 10 * W.heroesAt(s, cap.id).length;
+    }
+    return hired;
+  };
+  assert.ok(run(false) > 0, 'the court hires while no Edict is out');
+  assert.strictEqual(run(true), 0);
+});
+
+test('Hire Men costs Rate x 0.14 per man', () => {
+  assert.strictEqual(BK.Actions.hireCost({ rate: 49 }), 6.9);
 });
 
 test('January taxes need Support of at least 40', () => {
   const s = BK.Setup.newGame({ scenarioId: 2, seed: 3, players: [] });
-  const a = W.pref(s, 17), b = W.pref(s, 9);
+  const a = W.pref(s, 17), b = W.pref(s, 28);
   a.support = 40; b.support = 39;
   const ga = a.gold, gb = b.gold;
   BK.Econ.january(s);
@@ -83,13 +183,13 @@ test('battles end and apply cleanly', () => {
     const s = BK.Setup.newGame({ scenarioId: 2, seed, players: [] });
     const f = s.factions.find(x => s.chars[x.leader].key === 'Lu Zhishen');
     const ids = W.heroesAt(s, 17).slice(1).map(c => c.id);
-    const b = BK.War.start(s, { fid: f.id, source: 17, target: 9, heroes: ids, food: 400 });
+    const b = BK.War.start(s, { fid: f.id, source: 17, target: FOE, heroes: ids, food: 400 });
     const r = b.autoResolve();
     assert.ok(r && (r.winner === 'atk' || r.winner === 'def'));
     assert.ok(b.day <= 31);
     const res = BK.War.apply(s, b);
     assert.ok(typeof res.text === 'string' && res.text.length);
-    const p = W.pref(s, 9);
+    const p = W.pref(s, FOE);
     if (r.winner === 'atk') assert.strictEqual(p.owner, f.id);
     for (const c of s.chars) if (c.status === 'served') assert.ok(c.men >= 0);
   }
@@ -98,7 +198,7 @@ test('battles end and apply cleanly', () => {
 test('fire spreads downwind and rain puts it out', () => {
   const s = BK.Setup.newGame({ scenarioId: 2, seed: 21, players: [] });
   const f = s.factions.find(x => s.chars[x.leader].key === 'Lu Zhishen');
-  const b = BK.War.start(s, { fid: f.id, source: 17, target: 9, heroes: W.heroesAt(s, 17).slice(1).map(c => c.id), food: 400 });
+  const b = BK.War.start(s, { fid: f.id, source: 17, target: FOE, heroes: W.heroesAt(s, 17).slice(1).map(c => c.id), food: 400 });
   b.cells.forEach(c => { c.t = 'forest'; c.frozen = false; c.fire = 0; });
   b.cell(7, 5).fire = 3;
   b.wind = 0;
@@ -146,9 +246,9 @@ test('defenders hold an even fight more often than not', () => {
     const s = BK.Setup.newGame({ scenarioId: 2, seed, players: [] });
     const f = s.factions.find(x => s.chars[x.leader].key === 'Lu Zhishen');
     const hs = W.heroesAt(s, 17).slice(1);
-    const k = W.defenseValue(s, 9) / W.prefPower(s, 17, hs);
+    const k = W.defenseValue(s, FOE) / W.prefPower(s, 17, hs);
     hs.forEach(c => { c.men = Math.max(10, Math.round(c.men * k)); });
-    const b = BK.War.start(s, { fid: f.id, source: 17, target: 9, heroes: hs.map(c => c.id), food: 5000 });
+    const b = BK.War.start(s, { fid: f.id, source: 17, target: FOE, heroes: hs.map(c => c.id), food: 5000 });
     if (b.autoResolve().winner === 'atk') atkWins++;
     n++;
   }
@@ -188,7 +288,7 @@ test('losing your Good Fellow ends that player\'s game', async () => {
 test('a refused duel never leaves a unit with negative troops', () => {
   const s = BK.Setup.newGame({ scenarioId: 2, seed: 3, players: [] });
   const f = s.factions.find(x => s.chars[x.leader].key === 'Lu Zhishen');
-  const b = BK.War.start(s, { fid: f.id, source: 17, target: 9, heroes: W.heroesAt(s, 17).slice(1).map(c => c.id), food: 400 });
+  const b = BK.War.start(s, { fid: f.id, source: 17, target: FOE, heroes: W.heroesAt(s, 17).slice(1).map(c => c.id), food: 400 });
   const atk = b.live('atk')[0], def = b.live('def')[0];
   def.men = 0;
   s.chars[def.cid].courage = 0;
@@ -217,7 +317,7 @@ test('a hero leads at most 100 men', () => {
 test('archers shoot exactly two hexes along a hex line', () => {
   const s = BK.Setup.newGame({ scenarioId: 2, seed: 4, players: [] });
   const f = s.factions.find(x => s.chars[x.leader].key === 'Lu Zhishen');
-  const b = BK.War.start(s, { fid: f.id, source: 17, target: 9, heroes: W.heroesAt(s, 17).slice(1).map(c => c.id), food: 400 });
+  const b = BK.War.start(s, { fid: f.id, source: 17, target: FOE, heroes: W.heroesAt(s, 17).slice(1).map(c => c.id), food: 400 });
   b.cells.forEach(c => { c.t = 'plain'; c.frozen = false; });
   const u = b.live('atk')[0], o = b.live('def')[0];
   s.chars[u.cid].dex = 70;
@@ -235,7 +335,7 @@ test('archers shoot exactly two hexes along a hex line', () => {
 test('resting in battle restores 2 Body below 40 and nothing above', () => {
   const s = BK.Setup.newGame({ scenarioId: 2, seed: 6, players: [] });
   const f = s.factions.find(x => s.chars[x.leader].key === 'Lu Zhishen');
-  const b = BK.War.start(s, { fid: f.id, source: 17, target: 9, heroes: W.heroesAt(s, 17).slice(1).map(c => c.id), food: 400 });
+  const b = BK.War.start(s, { fid: f.id, source: 17, target: FOE, heroes: W.heroesAt(s, 17).slice(1).map(c => c.id), food: 400 });
   b.side = 'atk';
   const [u, v] = b.live('atk');
   const h = s.chars[u.cid], g = s.chars[v.cid];
@@ -248,13 +348,13 @@ test('resting in battle restores 2 Body below 40 and nothing above', () => {
 test('a defender calls up heroes waiting beyond the ten on the field', () => {
   const s = BK.Setup.newGame({ scenarioId: 2, seed: 8, players: [] });
   const f = s.factions.find(x => s.chars[x.leader].key === 'Lu Zhishen');
-  const t = W.pref(s, 9);
+  const t = W.pref(s, FOE);
   t.castles = 3;
   for (let i = 0; i < 11; i++) {
     const c = s.chars.find(x => x.status === 'free');
-    c.status = 'served'; c.faction = t.owner; c.loc = 9; c.men = 30; c.body = 60;
+    c.status = 'served'; c.faction = t.owner; c.loc = FOE; c.men = 30; c.body = 60;
   }
-  const b = BK.War.start(s, { fid: f.id, source: 17, target: 9, heroes: W.heroesAt(s, 17).slice(1).map(c => c.id), food: 400 });
+  const b = BK.War.start(s, { fid: f.id, source: 17, target: FOE, heroes: W.heroesAt(s, 17).slice(1).map(c => c.id), food: 400 });
   assert.strictEqual(b.live('def').length, 10);
   assert.ok(b.reserve.length > 0);
   const d = b.live('def')[1];

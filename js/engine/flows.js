@@ -456,8 +456,15 @@
         var here = W.pref(s, f.exileAt), r;
         if (cmd === 'xfight') r = await F.war(G, f.exileAt, fid);
         else if (cmd === 'xmove') {
-          var t = await io.pickPref('Flee to which prefecture?', W.neighbors(f.exileAt));
-          r = t == null ? 'again' : await report(io, A.wander(s, fid, t));
+          var t = await io.pickPref('Flee to which prefecture? (costs ' + lead.name + ' 10 Body)', W.neighbors(f.exileAt));
+          var others = W.exileBand(s, fid).filter(function (c) { return c.id !== f.leader; });
+          var ids = [];
+          if (t != null && others.length) {
+            ids = await io.pickChars('Who comes along to ' + W.pref(s, t).name + '? Anyone you leave behind leaves the band.',
+              others, { min: 0, max: others.length, cols: ['loyalty', 'men', 'body', 'str'], selected: others.map(function (c) { return c.id; }) });
+            if (ids == null) t = null;
+          }
+          r = t == null ? 'again' : await report(io, A.wander(s, fid, t, ids));
         } else if (cmd === 'xrecruit') {
           var how = await io.menu('Recruit Hero:', [
             { label: 'Seek heroes in town     (recruit, divine, rumours)', value: 'town' },

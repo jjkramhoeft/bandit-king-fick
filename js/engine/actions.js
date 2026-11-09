@@ -386,7 +386,7 @@
     },
 
     // --- Troops -----------------------------------------------------------------------------
-    hireCost: function (p) { return Math.max(1, Math.round(p.rate / 25 * 4 * 10) / 10); },
+    hireCost: function (p) { return Math.max(1, Math.round(p.rate / 25 * 3.5 * 10) / 10); },
     hireLimit: function (p) { return 10 + Math.round(p.wealth / 2 + p.land / 4); },
     hireMen: function (s, prefId, heroId, n) {
       var p = W.pref(s, prefId), c = W.char(s, heroId);
@@ -458,17 +458,24 @@
     },
 
     // --- Exile ------------------------------------------------------------------------------
-    wander: function (s, fid, toId) {
-      var f = W.faction(s, fid);
-      if (!W.isAdjacent(f.exileAt, toId)) return fail('You can only wander to a neighbouring prefecture.');
+    // Flee: the leader takes the band to a neighbouring prefecture. Fleeing costs the leader 10 Body,
+    // and the leader chooses who follows (ids; everyone by default). Those left behind leave the band
+    // and stay where they are as townsfolk.
+    wander: function (s, fid, toId, ids) {
+      var f = W.faction(s, fid), lead = W.leader(s, fid);
+      if (!W.isAdjacent(f.exileAt, toId)) return fail('You can only flee to a neighbouring prefecture.');
       if (W.pref(s, f.exileAt).snowbound || W.pref(s, toId).snowbound) return fail('Snow blocks the mountain passes.');
-      var rng = W.rng(s);
+      if (!A.needBody(lead, 10)) return fail(lead.name + ' is too exhausted to flee. (Body 10 needed)');
+      lead.body -= 10;
+      var rng = W.rng(s), left = [];
       W.exileBand(s, fid).forEach(function (c) {
+        if (c.id !== f.leader && ids && ids.indexOf(c.id) < 0) { left.push(c.name); A.release(s, c); return; }
         c.loc = toId;
         if (c.id !== f.leader && !c.brother) c.loyalty = Math.max(0, c.loyalty - rng.int(0, 2));
       });
       f.exileAt = toId;
-      return res(true, W.leader(s, fid).name + '\'s band slips into ' + W.pref(s, toId).name + '.', 'travel');
+      return res(true, lead.name + '\'s band slips into ' + W.pref(s, toId).name + '.' +
+        (left.length ? ' ' + left.join(', ') + (left.length > 1 ? ' stay' : ' stays') + ' behind.' : ''), 'travel');
     },
     // New bandits go to whichever heroes of the band have room for them.
     gather: function (s, fid) {

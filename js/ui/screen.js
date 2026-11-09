@@ -697,7 +697,7 @@
 
       pickChars: function (prompt, chars, opts) {
         opts = opts || {};
-        var picked = [], min = opts.min || 1, max = opts.max || chars.length;
+        var picked = [], min = opts.min != null ? opts.min : 1, max = opts.max || chars.length;
         var body = el('div');
         var hint = el('div', 'hint');
         var ok;
@@ -714,6 +714,10 @@
           upd();
         });
         body.appendChild(tableBox);
+        // opts.selected: ids that start out picked.
+        if (opts.selected) tableBox.querySelectorAll('tr.row').forEach(function (tr, i) {
+          if (opts.selected.indexOf(chars[i].id) >= 0 && picked.length < max) { picked.push(chars[i].id); tr.classList.add('sel'); }
+        });
         var all = el('button', 'gad', 'Select the first ' + Math.min(max, chars.length));
         all.style.marginTop = '4px';
         all.addEventListener('click', function () {
